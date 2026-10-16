@@ -1,0 +1,2883 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>San-Fierro News — Расследование</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400;1,700&family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&family=Caveat:wght@400;700&display=swap');
+
+  :root {
+    --bg: #0b0b0b;
+    --bg-soft: #111111;
+    --bg-card: #161616;
+    --text: #e8e8e8;
+    --text-dim: #8a8a8a;
+    --text-faint: #555555;
+    --accent: #3fb950;
+    --accent-soft: rgba(63, 185, 80, 0.15);
+    --border: #222222;
+    --border-light: #2a2a2a;
+    --red: #c41e3a;
+    --gold: #d4a574;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Inter', sans-serif;
+    font-weight: 300;
+    line-height: 1.7;
+    overflow-x: hidden;
+  }
+
+  .reading-progress {
+    position: fixed;
+    top: 0; left: 0;
+    height: 3px;
+    background: linear-gradient(90deg, var(--accent), #2ea043);
+    z-index: 1001;
+    width: 0%;
+    transition: width 0.1s;
+    box-shadow: 0 0 10px var(--accent);
+  }
+
+  .topbar {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    z-index: 100;
+    background: rgba(11, 11, 11, 0.95);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-bottom: 1px solid var(--border);
+    padding: 1.2rem 3rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    transition: all 0.3s ease;
+  }
+
+  .topbar-logo {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.3rem;
+    font-weight: 900;
+    letter-spacing: 1px;
+  }
+
+  .topbar-logo span { color: var(--accent); }
+
+  .topbar-meta {
+    display: flex;
+    gap: 2.5rem;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.7rem;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+  }
+
+  .topbar-meta .label {
+    color: var(--text-faint);
+    display: block;
+    margin-bottom: 2px;
+    font-size: 0.6rem;
+  }
+
+  .topbar-meta .value { color: var(--text); font-weight: 500; }
+  .topbar-meta .value.gold { color: var(--gold); }
+  .topbar-meta .value.accent { color: var(--accent); }
+
+  @media (max-width: 900px) {
+    .topbar { padding: 1rem 1.5rem; flex-direction: column; gap: 0.8rem; align-items: flex-start; }
+    .topbar-meta { gap: 1.5rem; flex-wrap: wrap; }
+  }
+
+  .side-timeline {
+    position: fixed;
+    right: 2rem;
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 99;
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+    align-items: flex-end;
+  }
+
+  .timeline-dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: var(--border);
+    border: 2px solid var(--border-light);
+    cursor: pointer;
+    transition: all 0.3s ease;
+    position: relative;
+  }
+
+  .timeline-dot::before {
+    content: attr(data-label);
+    position: absolute;
+    right: 25px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.65rem;
+    color: var(--text-dim);
+    white-space: nowrap;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    pointer-events: none;
+  }
+
+  .timeline-dot:hover::before { opacity: 1; }
+
+  .timeline-dot.active {
+    background: var(--accent);
+    border-color: var(--accent);
+    box-shadow: 0 0 15px var(--accent);
+    transform: scale(1.3);
+  }
+
+  .timeline-dot.active::before {
+    color: var(--accent);
+    opacity: 1;
+  }
+
+  @media (max-width: 1200px) {
+    .side-timeline { display: none; }
+  }
+
+  .hero {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 10rem 3rem 6rem;
+    position: relative;
+    text-align: left;
+    max-width: 100%;
+  }
+
+  .hero::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: 
+      radial-gradient(circle at 20% 50%, rgba(63, 185, 80, 0.05) 0%, transparent 50%),
+      radial-gradient(circle at 80% 80%, rgba(63, 185, 80, 0.03) 0%, transparent 50%);
+    pointer-events: none;
+  }
+
+  .hero-content {
+    position: relative;
+    z-index: 2;
+    max-width: 1400px;
+    margin: 0 auto;
+    width: 100%;
+  }
+
+  .hero-tag {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.85rem;
+    letter-spacing: 4px;
+    color: var(--accent);
+    text-transform: uppercase;
+    margin-bottom: 2rem;
+    opacity: 0;
+    animation: fadeUp 1s 0.3s forwards;
+    display: inline-flex;
+    align-items: center;
+    gap: 1rem;
+  }
+
+  .hero-tag::before {
+    content: '';
+    display: inline-block;
+    width: 60px;
+    height: 2px;
+    background: var(--accent);
+    animation: expandLine 1s 0.5s forwards;
+    transform-origin: left;
+  }
+
+  @keyframes expandLine {
+    from { transform: scaleX(0); }
+    to { transform: scaleX(1); }
+  }
+
+  .hero-title {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(3rem, 7vw, 6rem);
+    font-weight: 900;
+    line-height: 1;
+    letter-spacing: -2px;
+    margin-bottom: 2rem;
+    opacity: 0;
+    animation: fadeUp 1s 0.5s forwards;
+    text-align: left;
+    max-width: 100%;
+  }
+
+  .hero-title em {
+    font-style: italic;
+    font-weight: 400;
+    color: var(--accent);
+    position: relative;
+    display: inline-block;
+  }
+
+  .hero-title em::after {
+    content: '';
+    position: absolute;
+    bottom: -5px;
+    left: 0; right: 0;
+    height: 3px;
+    background: var(--accent);
+    transform: scaleX(0);
+    transform-origin: left;
+    animation: underlineExpand 1s 1s forwards;
+  }
+
+  @keyframes underlineExpand {
+    to { transform: scaleX(1); }
+  }
+
+  .hero-lead {
+    font-size: 1.25rem;
+    color: var(--text-dim);
+    max-width: 900px;
+    margin-bottom: 3rem;
+    opacity: 0;
+    animation: fadeUp 1s 0.7s forwards;
+    text-align: left;
+    line-height: 1.9;
+  }
+
+  .hero-lead strong {
+    color: var(--text);
+    font-weight: 500;
+  }
+
+  .hero-lead em {
+    color: var(--accent);
+    font-style: italic;
+  }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(30px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .section {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 6rem 3rem;
+    border-top: 1px solid var(--border);
+    position: relative;
+  }
+
+  .section::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 1px;
+    height: 60px;
+    background: linear-gradient(180deg, var(--accent), transparent);
+    opacity: 0.5;
+  }
+
+  @media (max-width: 768px) {
+    .section { padding: 4rem 1.5rem; }
+  }
+
+  .section-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.7rem;
+    letter-spacing: 3px;
+    color: var(--accent);
+    text-transform: uppercase;
+    margin-bottom: 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+  }
+
+  .section-label::before {
+    content: '';
+    width: 8px;
+    height: 8px;
+    background: var(--accent);
+    border-radius: 50%;
+    animation: pulse 2s infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.5; transform: scale(1.2); }
+  }
+
+  .section-header {
+    display: flex;
+    align-items: flex-start;
+    gap: 3rem;
+    margin-bottom: 4rem;
+    flex-wrap: wrap;
+  }
+
+  .section-num {
+    font-family: 'Playfair Display', serif;
+    font-size: 8rem;
+    font-weight: 900;
+    color: var(--border-light);
+    line-height: 0.8;
+    letter-spacing: -4px;
+    flex-shrink: 0;
+    position: relative;
+  }
+
+  .section-num::after {
+    content: '';
+    position: absolute;
+    bottom: -10px;
+    left: 0;
+    width: 60px;
+    height: 3px;
+    background: var(--accent);
+  }
+
+  .section-title {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(2rem, 4vw, 3.5rem);
+    font-weight: 700;
+    line-height: 1.1;
+    max-width: 700px;
+  }
+
+  .section-title em {
+    font-style: italic;
+    font-weight: 400;
+    color: var(--accent);
+  }
+
+  .narrative {
+    font-size: 1.1rem;
+    color: var(--text-dim);
+    max-width: 750px;
+    margin-bottom: 4rem;
+    line-height: 1.8;
+    text-align: left;
+  }
+
+  .narrative p {
+    margin-bottom: 1.2rem;
+    text-align: left;
+  }
+
+  .narrative strong {
+    color: var(--text);
+    font-weight: 500;
+  }
+
+  .photo-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 3rem;
+    margin: 4rem 0;
+  }
+
+  @media (max-width: 900px) {
+    .photo-grid { grid-template-columns: 1fr; }
+  }
+
+  .photo-item {
+    position: relative;
+    opacity: 0;
+    transform: translateY(40px);
+    transition: all 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .photo-item.visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  .photo-frame {
+    position: relative;
+    overflow: hidden;
+    background: var(--bg-soft);
+    aspect-ratio: 16/9;
+    cursor: pointer;
+    border: 1px solid var(--border);
+  }
+
+  .photo-frame::before {
+    content: '';
+    position: absolute;
+    top: 0; left: -100%;
+    width: 100%; height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(63, 185, 80, 0.1), transparent);
+    transition: left 0.6s ease;
+    z-index: 2;
+    pointer-events: none;
+  }
+
+  .photo-frame:hover::before { left: 100%; }
+
+  .photo-frame:hover {
+    border-color: var(--accent);
+    box-shadow: 0 20px 60px rgba(63, 185, 80, 0.2);
+  }
+
+  .photo-frame img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    filter: grayscale(20%) contrast(1.05);
+    transition: all 0.6s ease;
+  }
+
+  .photo-frame:hover img {
+    filter: grayscale(0%) contrast(1.1);
+    transform: scale(1.05);
+  }
+
+  .photo-caption {
+    padding: 1.2rem 0;
+  }
+
+  .photo-meta {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.7rem;
+    letter-spacing: 2px;
+    color: var(--accent);
+    text-transform: uppercase;
+    margin-bottom: 0.8rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .photo-text {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.2rem;
+    font-style: italic;
+    color: var(--text);
+    line-height: 1.5;
+  }
+
+  .photo-text .speaker {
+    font-style: normal;
+    font-weight: 700;
+    color: var(--accent);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.7rem;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    display: block;
+    margin-bottom: 0.5rem;
+  }
+
+  .dialogue {
+    margin: 4rem 0;
+    padding: 2.5rem 0;
+    border-top: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+    position: relative;
+  }
+
+  .dialogue::before {
+    content: 'СТЕНОГРАММА';
+    position: absolute;
+    top: -12px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--bg);
+    padding: 0 2rem;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.7rem;
+    letter-spacing: 3px;
+    color: var(--accent);
+  }
+
+  .dialogue-row {
+    display: grid;
+    grid-template-columns: 180px 1fr;
+    gap: 2rem;
+    margin-bottom: 1.5rem;
+    align-items: baseline;
+    opacity: 0;
+    transform: translateX(-20px);
+    transition: all 0.6s ease;
+  }
+
+  .dialogue-row.visible {
+    opacity: 1;
+    transform: translateX(0);
+  }
+
+  .dialogue-speaker {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.7rem;
+    letter-spacing: 2px;
+    color: var(--accent);
+    text-transform: uppercase;
+    position: relative;
+    padding-left: 1rem;
+  }
+
+  .dialogue-speaker::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 4px;
+    height: 4px;
+    background: var(--accent);
+    border-radius: 50%;
+  }
+
+  .dialogue-text {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.3rem;
+    font-style: italic;
+    color: var(--text);
+    line-height: 1.5;
+  }
+
+  @media (max-width: 600px) {
+    .dialogue-row { grid-template-columns: 1fr; gap: 0.5rem; }
+  }
+
+  .pullquote {
+    margin: 4rem 0;
+    padding: 2.5rem 0 2.5rem 2rem;
+    border-left: 2px solid var(--accent);
+    position: relative;
+  }
+
+  .pullquote::before {
+    content: '"';
+    position: absolute;
+    top: -20px;
+    left: 20px;
+    font-family: 'Playfair Display', serif;
+    font-size: 8rem;
+    color: var(--accent);
+    opacity: 0.2;
+    line-height: 1;
+  }
+
+  .pullquote-text {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(1.5rem, 3vw, 2rem);
+    font-style: italic;
+    line-height: 1.4;
+    color: var(--text);
+    margin-bottom: 1rem;
+    position: relative;
+    z-index: 1;
+  }
+
+  .pullquote-author {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.7rem;
+    letter-spacing: 2px;
+    color: var(--accent);
+    text-transform: uppercase;
+  }
+
+  .dossier {
+    margin-top: 5rem;
+    padding-top: 3rem;
+    border-top: 1px solid var(--border);
+  }
+
+  .dossier-grid {
+    display: grid;
+    grid-template-columns: 350px 1fr;
+    gap: 4rem;
+    align-items: start;
+  }
+
+  @media (max-width: 900px) {
+    .dossier-grid { grid-template-columns: 1fr; gap: 3rem; }
+  }
+
+  .dossier-photo-frame {
+    aspect-ratio: 3/4;
+    overflow: hidden;
+    background: var(--bg-soft);
+    border: 1px solid var(--border);
+    position: relative;
+    cursor: pointer;
+  }
+
+  .dossier-photo-frame::after {
+    content: 'CONFIDENTIAL';
+    position: absolute;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%) rotate(-45deg);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 1.8rem;
+    color: var(--accent);
+    opacity: 0.1;
+    letter-spacing: 8px;
+    pointer-events: none;
+  }
+
+  .dossier-photo-frame img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    filter: grayscale(20%);
+    transition: filter 0.5s ease;
+  }
+
+  .dossier-photo-frame:hover img { filter: grayscale(0%); }
+
+  .dossier-photo-label {
+    margin-top: 1rem;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.7rem;
+    letter-spacing: 2px;
+    color: var(--accent);
+    text-transform: uppercase;
+  }
+
+  .dossier-name {
+    font-family: 'Playfair Display', serif;
+    font-size: 2.5rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+  }
+
+  .dossier-role {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.75rem;
+    color: var(--text-dim);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-bottom: 2rem;
+    display: inline-block;
+    padding: 0.4rem 0.8rem;
+    border: 1px solid var(--border);
+  }
+
+  .dossier-fields {
+    display: grid;
+    gap: 1.2rem;
+  }
+
+  .dossier-field {
+    padding-bottom: 1.2rem;
+    border-bottom: 1px solid var(--border);
+    transition: all 0.3s ease;
+  }
+
+  .dossier-field:hover {
+    border-bottom-color: var(--accent);
+    padding-left: 0.8rem;
+  }
+
+  .dossier-field:last-child { border-bottom: none; }
+
+  .dossier-field-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.6rem;
+    letter-spacing: 2px;
+    color: var(--text-faint);
+    text-transform: uppercase;
+    margin-bottom: 0.6rem;
+  }
+
+  .dossier-field-value {
+    font-size: 1rem;
+    color: var(--text);
+    line-height: 1.6;
+  }
+
+  .dossier-field-value.accent { color: var(--accent); }
+
+  .footer {
+    border-top: 1px solid var(--border);
+    padding: 3rem;
+    position: relative;
+  }
+
+  .footer::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 100px;
+    height: 1px;
+    background: var(--accent);
+  }
+
+  .footer-logo {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.3rem;
+    font-weight: 900;
+    margin-bottom: 0.8rem;
+  }
+
+  .footer-logo span { color: var(--accent); }
+
+  .footer-text {
+    font-size: 0.8rem;
+    color: var(--text-dim);
+    max-width: 500px;
+  }
+
+  .reveal {
+    opacity: 0;
+    transform: translateY(30px);
+    transition: all 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .reveal.visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  .animated-divider {
+    width: 100%;
+    height: 1px;
+    background: var(--border);
+    position: relative;
+    overflow: hidden;
+    margin: 3rem 0;
+  }
+
+  .animated-divider::after {
+    content: '';
+    position: absolute;
+    top: 0; left: -100%;
+    width: 100%; height: 100%;
+    background: linear-gradient(90deg, transparent, var(--accent), transparent);
+    animation: slideDivider 3s infinite;
+  }
+
+  @keyframes slideDivider {
+    0% { left: -100%; }
+    100% { left: 100%; }
+  }
+
+  .lightbox {
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0, 0, 0, 0.95);
+    z-index: 10000;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+  }
+
+  .lightbox.active {
+    display: flex;
+    opacity: 1;
+  }
+
+  .lightbox-content {
+    max-width: 90%;
+    max-height: 90%;
+    position: relative;
+  }
+
+  .lightbox-content img {
+    max-width: 100%;
+    max-height: 90vh;
+    object-fit: contain;
+    border: 2px solid var(--accent);
+  }
+
+  .lightbox-close {
+    position: absolute;
+    top: -50px;
+    right: 0;
+    background: none;
+    border: none;
+    color: var(--accent);
+    font-size: 2rem;
+    cursor: pointer;
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  .lightbox-caption {
+    margin-top: 1rem;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.85rem;
+    color: var(--text);
+  }
+
+  .hotspot {
+    position: absolute;
+    width: 28px;
+    height: 28px;
+    background: var(--accent);
+    border-radius: 50%;
+    cursor: pointer;
+    z-index: 10;
+    animation: hotspotPulse 2s infinite;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.65rem;
+    color: white;
+    font-weight: 700;
+  }
+
+  .hotspot::before {
+    content: '';
+    position: absolute;
+    top: -5px; left: -5px; right: -5px; bottom: -5px;
+    border: 2px solid var(--accent);
+    border-radius: 50%;
+    animation: hotspotRing 2s infinite;
+  }
+
+  @keyframes hotspotPulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.1); }
+  }
+
+  @keyframes hotspotRing {
+    0%, 100% { transform: scale(1); opacity: 1; }
+    50% { transform: scale(1.5); opacity: 0; }
+  }
+
+  .hotspot-tooltip {
+    position: absolute;
+    bottom: 35px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--bg-card);
+    border: 1px solid var(--accent);
+    padding: 0.8rem;
+    font-family: 'Inter', sans-serif;
+    font-size: 0.8rem;
+    color: var(--text);
+    white-space: nowrap;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s ease;
+    z-index: 11;
+  }
+
+  .hotspot:hover .hotspot-tooltip { opacity: 1; }
+
+  .scene-nav {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 3rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--border);
+  }
+
+  .nav-button {
+    background: transparent;
+    border: 1px solid var(--accent);
+    color: var(--accent);
+    padding: 0.9rem 1.8rem;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.8rem;
+    letter-spacing: 2px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-transform: uppercase;
+  }
+
+  .nav-button:hover {
+    background: var(--accent);
+    color: var(--bg);
+  }
+
+  .nav-button:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+  }
+
+  .evidence-map {
+    margin: 3rem 0;
+    padding: 2.5rem;
+    background: var(--bg-soft);
+    border: 1px solid var(--border);
+    position: relative;
+  }
+
+  .map-title {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.75rem;
+    letter-spacing: 3px;
+    color: var(--accent);
+    text-transform: uppercase;
+    margin-bottom: 1.5rem;
+  }
+
+  .map-nodes {
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 1.5rem;
+  }
+
+  .map-node {
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+  }
+
+  .map-node:hover { transform: translateY(-5px); }
+
+  .map-node-circle {
+    width: 70px;
+    height: 70px;
+    border-radius: 50%;
+    background: var(--bg-card);
+    border: 2px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 0.8rem;
+    font-family: 'Playfair Display', serif;
+    font-size: 1.3rem;
+    font-weight: 700;
+    color: var(--accent);
+    transition: all 0.3s ease;
+  }
+
+  .map-node:hover .map-node-circle {
+    border-color: var(--accent);
+    box-shadow: 0 0 25px rgba(63, 185, 80, 0.3);
+  }
+
+  .map-node-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.65rem;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+
+  /* ===== QUESTION NOTE ===== */
+  .question-note {
+    margin: 4rem 0;
+    padding: 2.5rem 3rem;
+    background: linear-gradient(135deg, rgba(196, 30, 58, 0.05) 0%, rgba(11, 11, 11, 1) 100%);
+    border: 1px solid var(--red);
+    border-left: 4px solid var(--red);
+    position: relative;
+    cursor: pointer;
+    transition: all 0.4s ease;
+  }
+
+  .question-note:hover {
+    background: linear-gradient(135deg, rgba(196, 30, 58, 0.1) 0%, rgba(11, 11, 11, 1) 100%);
+    transform: translateX(5px);
+  }
+
+  .question-note::before {
+    content: '?';
+    position: absolute;
+    top: -20px;
+    left: 2rem;
+    background: var(--bg);
+    padding: 0 1rem;
+    font-family: 'Playfair Display', serif;
+    font-size: 2rem;
+    font-weight: 900;
+    color: var(--red);
+  }
+
+  .question-note-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.65rem;
+    letter-spacing: 3px;
+    color: var(--red);
+    text-transform: uppercase;
+    margin-bottom: 1rem;
+  }
+
+  .question-note-text {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.5rem;
+    font-style: italic;
+    color: var(--text);
+    line-height: 1.4;
+    margin-bottom: 1rem;
+  }
+
+  .question-note-hint {
+    font-family: 'Inter', sans-serif;
+    font-size: 0.95rem;
+    color: var(--text-dim);
+    line-height: 1.6;
+  }
+
+  /* ===== EMAIL BLOCK ===== */
+  .email-block {
+    margin: 4rem 0;
+    background: var(--bg-soft);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+  }
+
+  .email-header-bar {
+    background: #1a1a1a;
+    padding: 1rem 2rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .email-icon {
+    width: 32px;
+    height: 32px;
+    background: var(--red);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1rem;
+    color: white;
+    flex-shrink: 0;
+  }
+
+  .email-subject {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--text);
+  }
+
+  .email-meta {
+    padding: 1.5rem 2rem;
+    border-bottom: 1px solid var(--border);
+    display: grid;
+    gap: 0.8rem;
+  }
+
+  .email-meta-row {
+    display: grid;
+    grid-template-columns: 100px 1fr;
+    gap: 1rem;
+    align-items: baseline;
+  }
+
+  .email-meta-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.7rem;
+    letter-spacing: 2px;
+    color: var(--text-faint);
+    text-transform: uppercase;
+  }
+
+  .email-meta-value {
+    font-size: 0.95rem;
+    color: var(--text);
+  }
+
+  .email-meta-value .sender-name {
+    font-weight: 600;
+    color: var(--accent);
+  }
+
+  .email-meta-value .sender-email {
+    color: var(--text-dim);
+    font-size: 0.85rem;
+  }
+
+  .email-body {
+    padding: 2.5rem;
+    font-family: 'Inter', sans-serif;
+    font-size: 1.05rem;
+    color: var(--text);
+    line-height: 1.8;
+  }
+
+  .email-body p {
+    margin-bottom: 1.2rem;
+  }
+
+  .email-body .greeting {
+    font-weight: 600;
+    color: var(--text);
+    margin-bottom: 1.5rem;
+  }
+
+  .email-body .signature {
+    margin-top: 2rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--border);
+    font-style: italic;
+    color: var(--text-dim);
+  }
+
+  .email-body .signature strong {
+    color: var(--accent);
+    font-style: normal;
+    display: block;
+    margin-bottom: 0.3rem;
+  }
+
+  .email-footer {
+    padding: 1rem 2rem;
+    background: #1a1a1a;
+    border-top: 1px solid var(--border);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.7rem;
+    color: var(--text-faint);
+    letter-spacing: 1px;
+    display: flex;
+    justify-content: space-between;
+  }
+
+  .email-footer .priority {
+    color: var(--red);
+    font-weight: 700;
+  }
+
+  /* ===== VERDICT ===== */
+  .verdict-section {
+    margin: 5rem 0;
+    padding: 4rem 3rem;
+    background: linear-gradient(135deg, rgba(196, 30, 58, 0.05) 0%, rgba(11, 11, 11, 1) 100%);
+    border: 1px solid var(--red);
+    position: relative;
+  }
+
+  .verdict-section::before {
+    content: 'ВЕРДИКТ';
+    position: absolute;
+    top: -12px;
+    left: 2rem;
+    background: var(--bg);
+    padding: 0 1rem;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.7rem;
+    letter-spacing: 3px;
+    color: var(--red);
+  }
+
+  .verdict-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 2rem;
+    font-weight: 700;
+    margin-bottom: 2rem;
+    color: var(--text);
+  }
+
+  .verdict-list {
+    display: grid;
+    gap: 1.5rem;
+  }
+
+  .verdict-item {
+    display: grid;
+    grid-template-columns: 200px 1fr auto;
+    gap: 2rem;
+    align-items: center;
+    padding: 1.5rem;
+    background: var(--bg-soft);
+    border: 1px solid var(--border);
+    transition: all 0.3s ease;
+  }
+
+  .verdict-item:hover {
+    border-color: var(--red);
+    transform: translateX(5px);
+  }
+
+  .verdict-name {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.2rem;
+    font-weight: 700;
+  }
+
+  .verdict-desc {
+    font-size: 0.95rem;
+    color: var(--text-dim);
+    line-height: 1.5;
+  }
+
+  .verdict-status {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.7rem;
+    letter-spacing: 2px;
+    padding: 0.5rem 1rem;
+    text-transform: uppercase;
+    white-space: nowrap;
+  }
+
+  .verdict-status.arrested {
+    background: var(--red);
+    color: white;
+  }
+
+  .verdict-status.cleared {
+    background: var(--accent);
+    color: var(--bg);
+  }
+
+  @media (max-width: 768px) {
+    .verdict-item {
+      grid-template-columns: 1fr;
+      gap: 1rem;
+    }
+  }
+
+  .final-verdict-statement {
+    margin-top: 3rem;
+    text-align: left;
+    font-family: 'Playfair Display', serif;
+    font-size: 1.8rem;
+    font-weight: 700;
+    color: var(--accent);
+    font-style: italic;
+    border-top: 1px solid var(--border);
+    padding-top: 2rem;
+  }
+
+  /* ===== REPORT BLOCK ===== */
+  .report-block {
+    margin: 5rem 0;
+    padding: 3rem;
+    background: var(--bg-soft);
+    border: 1px solid var(--border);
+    border-left: 4px solid var(--gold);
+    position: relative;
+  }
+
+  .report-block::before {
+    content: 'ОТЧЁТ РЕДАКЦИИ';
+    position: absolute;
+    top: -12px;
+    left: 2rem;
+    background: var(--bg);
+    padding: 0 1rem;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.7rem;
+    letter-spacing: 3px;
+    color: var(--gold);
+  }
+
+  .report-header {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2rem;
+    margin-bottom: 2rem;
+    padding-bottom: 2rem;
+    border-bottom: 1px solid var(--border);
+  }
+
+  @media (max-width: 768px) {
+    .report-header { grid-template-columns: 1fr; }
+  }
+
+  .report-field {
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+  }
+
+  .report-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.65rem;
+    letter-spacing: 2px;
+    color: var(--text-faint);
+    text-transform: uppercase;
+  }
+
+  .report-value {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.1rem;
+    color: var(--text);
+    font-weight: 500;
+  }
+
+  .report-section {
+    margin-bottom: 2rem;
+  }
+
+  .report-section-title {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.75rem;
+    letter-spacing: 2px;
+    color: var(--gold);
+    text-transform: uppercase;
+    margin-bottom: 1rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .report-text {
+    font-size: 1rem;
+    color: var(--text-dim);
+    line-height: 1.7;
+  }
+
+  .report-text p {
+    margin-bottom: 1rem;
+  }
+
+  .report-text strong {
+    color: var(--text);
+    font-weight: 500;
+  }
+
+  .report-signature {
+    margin-top: 3rem;
+    padding-top: 2rem;
+    border-top: 1px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    flex-wrap: wrap;
+    gap: 2rem;
+  }
+
+  .signature-block {
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+  }
+
+  .signature-name {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.5rem;
+    color: var(--text);
+    font-weight: 700;
+    font-style: italic;
+  }
+
+  .signature-role {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.7rem;
+    color: var(--text-faint);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+  }
+
+  /* ===== CLUE BLOCK ===== */
+  .clue-block {
+    margin: 4rem 0;
+    display: grid;
+    gap: 1rem;
+  }
+
+  .clue-item {
+    background: var(--bg-soft);
+    border: 1px solid var(--border);
+    padding: 1.5rem 2rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .clue-item::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 3px;
+    background: var(--accent);
+    transform: scaleY(0);
+    transform-origin: top;
+    transition: transform 0.3s ease;
+  }
+
+  .clue-item:hover::before {
+    transform: scaleY(1);
+  }
+
+  .clue-item:hover {
+    background: var(--bg-card);
+    padding-left: 2.5rem;
+  }
+
+  .clue-item.open {
+    background: var(--bg-card);
+    border-color: var(--accent);
+  }
+
+  .clue-item.open::before {
+    transform: scaleY(1);
+  }
+
+  .clue-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.5rem;
+  }
+
+  .clue-number {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.7rem;
+    color: var(--accent);
+    letter-spacing: 2px;
+  }
+
+  .clue-scene {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.7rem;
+    color: var(--text-faint);
+  }
+
+  .clue-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.2rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+  }
+
+  .clue-desc {
+    font-size: 0.9rem;
+    color: var(--text-dim);
+    line-height: 1.5;
+  }
+
+  .clue-content {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.5s ease;
+    margin-top: 0;
+  }
+
+  .clue-item.open .clue-content {
+    max-height: 500px;
+    margin-top: 1rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--border);
+  }
+
+  .clue-content p {
+    font-size: 0.95rem;
+    color: var(--text);
+    line-height: 1.7;
+    margin-bottom: 0.8rem;
+  }
+
+  .clue-toggle {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.7rem;
+    color: var(--accent);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+  }
+</style>
+</head>
+<body>
+
+<div class="reading-progress" id="readingProgress"></div>
+
+<div class="side-timeline">
+  <div class="timeline-dot active" data-label="Начало" onclick="document.querySelector('.hero').scrollIntoView({behavior: 'smooth'})"></div>
+  <div class="timeline-dot" data-label="Сцена 01" onclick="document.getElementById('scene01').scrollIntoView({behavior: 'smooth'})"></div>
+  <div class="timeline-dot" data-label="Сцена 02" onclick="document.getElementById('scene02').scrollIntoView({behavior: 'smooth'})"></div>
+  <div class="timeline-dot" data-label="Сцена 03" onclick="document.getElementById('scene03').scrollIntoView({behavior: 'smooth'})"></div>
+  <div class="timeline-dot" data-label="Сцена 04" onclick="document.getElementById('scene04').scrollIntoView({behavior: 'smooth'})"></div>
+  <div class="timeline-dot" data-label="Сцена 05" onclick="document.getElementById('scene05').scrollIntoView({behavior: 'smooth'})"></div>
+  <div class="timeline-dot" data-label="Сцена 06" onclick="document.getElementById('scene06').scrollIntoView({behavior: 'smooth'})"></div>
+  <div class="timeline-dot" data-label="Сцена 07" onclick="document.getElementById('scene07').scrollIntoView({behavior: 'smooth'})"></div>
+  <div class="timeline-dot" data-label="Сцена 08" onclick="document.getElementById('scene08').scrollIntoView({behavior: 'smooth'})"></div>
+  <div class="timeline-dot" data-label="Сцена 09" onclick="document.getElementById('scene09').scrollIntoView({behavior: 'smooth'})"></div>
+  <div class="timeline-dot" data-label="Сцена 10" onclick="document.getElementById('scene10').scrollIntoView({behavior: 'smooth'})"></div>
+  <div class="timeline-dot" data-label="Сцена 11" onclick="document.getElementById('scene11').scrollIntoView({behavior: 'smooth'})"></div>
+  <div class="timeline-dot" data-label="Сцена 12" onclick="document.getElementById('scene12').scrollIntoView({behavior: 'smooth'})"></div>
+  <div class="timeline-dot" data-label="Сцена 13" onclick="document.getElementById('scene13').scrollIntoView({behavior: 'smooth'})"></div>
+  <div class="timeline-dot" data-label="Финал" onclick="document.getElementById('scene14').scrollIntoView({behavior: 'smooth'})"></div>
+</div>
+
+<div class="topbar">
+  <div class="topbar-logo">SAN-FIERRO <span>NEWS</span></div>
+  <div class="topbar-meta">
+    <div><span class="label">Штат</span><span class="value">San-Andreas</span></div>
+    <div><span class="label">Дата</span><span class="value">16.10.2026</span></div>
+    <div><span class="label">Редактор</span><span class="value gold">Purosangue Sao</span></div>
+    <div><span class="label">Фото</span><span class="value">Anna Village · Rauf Falk</span></div>
+    <div><span class="label">Статус</span><span class="value accent">● Расследование</span></div>
+  </div>
+</div>
+
+<section class="hero">
+  <div class="hero-content">
+    <div class="hero-tag">Расследование · Акт I</div>
+    <h1 class="hero-title">Культ в погонах: <em>как журналист San-Fierro News</em> раскрыл заговор внутри полицейского департамента</h1>
+    <p class="hero-lead">
+      Это расследование было инициировано генеральным директором San-Fierro News Jonny Wilde. Рутинное задание превратилось в одно из самых серьёзных дел в истории редакции: коррупция, фальсификации, взятки и попытка свержения шерифа Фридриха. 
+    </p>
+  </div>
+</section>
+
+<section class="section" id="scene01">
+  <div class="section-label">Сцена 01 · Офис редакции</div>
+  <div class="section-header">
+    <div class="section-num">01</div>
+    <h2 class="section-title">Разговор с <em>генеральным директором</em></h2>
+  </div>
+  <div class="narrative">
+    <p>Утро в редакции. Jonny Wilde редко вызывает журналистов лично. Когда это происходит — значит, речь о чём-то, что нельзя обсуждать в общем чате.</p>
+    <p>На его столе — распечатка с пометкой красным маркером. Я не вижу содержания, но этого достаточно, чтобы понять: задание будет нестандартным.</p>
+  </div>
+  <div class="photo-grid">
+    <div class="photo-item" data-photo="5">
+      <div class="photo-frame" onclick="openLightbox('img/5.jpg', 'Jonny Wilde · Кабинет директора San-Fierro News')">
+        <img src="img/5.jpg" alt="Jonny Wilde">
+      </div>
+      <div class="photo-caption">
+        <div class="photo-meta"><span>Кадр 05</span><span>Кабинет директора · San-Fierro News</span></div>
+        <div class="photo-text"><span class="speaker">Jonny Wilde</span>«Purosangue, разговаривал с источником. В полицейском департаменте творится неладное.»</div>
+      </div>
+    </div>
+    <div class="photo-item" data-photo="6">
+      <div class="photo-frame" onclick="openLightbox('img/6.jpg', 'Поручение · Начало расследования')">
+        <img src="img/6.jpg" alt="Поручение">
+      </div>
+      <div class="photo-caption">
+        <div class="photo-meta"><span>Кадр 06</span><span>Начало расследования</span></div>
+        <div class="photo-text"><span class="speaker">Jonny Wilde</span>«Поручаю тебе провести расследование.» — «Я готов. Приступаю!»</div>
+      </div>
+    </div>
+  </div>
+  <div class="dialogue">
+    <div class="dialogue-row" data-delay="0"><div class="dialogue-speaker">Jonny Wilde</div><div class="dialogue-text">«Purosangue, разговаривал с источником. В полицейском департаменте творится неладное.»</div></div>
+    <div class="dialogue-row" data-delay="200"><div class="dialogue-speaker">Jonny Wilde</div><div class="dialogue-text">«Поручаю тебе провести расследование.»</div></div>
+    <div class="dialogue-row" data-delay="400"><div class="dialogue-speaker">Purosangue</div><div class="dialogue-text">«Я готов. Приступаю к расследованию!»</div></div>
+  </div>
+  <div class="pullquote reveal">
+    <div class="pullquote-text">«В полицейском департаменте творится неладное. Поручаю тебе провести расследование.»</div>
+    <div class="pullquote-author">— Jonny Wilde, генеральный директор San-Fierro News</div>
+  </div>
+  <div class="scene-nav">
+    <button class="nav-button" disabled>← Предыдущая</button>
+    <button class="nav-button" onclick="document.getElementById('scene02').scrollIntoView({behavior: 'smooth'})">Следующая сцена →</button>
+  </div>
+</section>
+
+<div class="animated-divider"></div>
+
+<section class="section" id="scene02">
+  <div class="section-label">Сцена 02 · Полицейский департамент</div>
+  <div class="section-header">
+    <div class="section-num">02</div>
+    <h2 class="section-title">Проникновение <em>в систему</em></h2>
+  </div>
+  <div class="narrative">
+    <p>Стандартная процедура найма. Обычные вопросы, стандартные ответы. Офицер даже не смотрит в документы внимательно — для него я всего лишь ещё один кандидат.</p>
+    <p>Через десять минут доступ в здание получен. Первый этап выполнен. Теперь нужно ждать — и наблюдать.</p>
+  </div>
+  <div class="photo-grid">
+    <div class="photo-item" data-photo="4">
+      <div class="photo-frame" onclick="openLightbox('img/4.jpg', 'Приветствие · Начало собеседования')">
+        <img src="img/4.jpg" alt="Приветствие">
+      </div>
+      <div class="photo-caption">
+        <div class="photo-meta"><span>Кадр 01 · Начало</span><span>14:30</span></div>
+        <div class="photo-text"><span class="speaker">Офицер</span>«Приветствую вас. Вы к нам на собеседование, я так понимаю, да?»</div>
+      </div>
+    </div>
+    <div class="photo-item" data-photo="1">
+      <div class="photo-frame" onclick="openLightbox('img/1.jpg', 'Опыт работы · Вопрос офицера')">
+        <img src="img/1.jpg" alt="Опыт работы">
+      </div>
+      <div class="photo-caption">
+        <div class="photo-meta"><span>Кадр 02</span><span>14:32</span></div>
+        <div class="photo-text"><span class="speaker">Офицер</span>«У вас опыт работы в полиции был?» — «Был, давненько уже... Не подведу!»</div>
+      </div>
+    </div>
+    <div class="photo-item" data-photo="2">
+      <div class="photo-frame" onclick="openLightbox('img/2.jpg', 'Предыдущее место работы')">
+        <img src="img/2.jpg" alt="Предыдущее место">
+      </div>
+      <div class="photo-caption">
+        <div class="photo-meta"><span>Кадр 03</span><span>14:35</span></div>
+        <div class="photo-text"><span class="speaker">Офицер</span>«Подскажите предыдущее место работы?» — «Работал в новостях Сан-Фиерро, журналистом.»</div>
+      </div>
+    </div>
+    <div class="photo-item" data-photo="3">
+      <div class="photo-frame" onclick="openLightbox('img/3.jpg', 'Принят на работу · Финал собеседования')">
+        <img src="img/3.jpg" alt="Принят на работу">
+      </div>
+      <div class="photo-caption">
+        <div class="photo-meta"><span>Кадр 04 · Финал</span><span>14:41</span></div>
+        <div class="photo-text"><span class="speaker">Офицер</span>«Вы приняты. Униформу можете подобрать в раздевалке на первом этаже.» — «Спасибо, лейтенант!»</div>
+      </div>
+    </div>
+  </div>
+  <div class="dialogue">
+    <div class="dialogue-row" data-delay="0"><div class="dialogue-speaker">Офицер</div><div class="dialogue-text">«Приветствую вас. Вы к нам на собеседование, я так понимаю, да?»</div></div>
+    <div class="dialogue-row" data-delay="200"><div class="dialogue-speaker">Purosangue</div><div class="dialogue-text">«Да, господин офицер. Готов приступить.»</div></div>
+    <div class="dialogue-row" data-delay="400"><div class="dialogue-speaker">Офицер</div><div class="dialogue-text">«У вас опыт работы в полиции был?»</div></div>
+    <div class="dialogue-row" data-delay="600"><div class="dialogue-speaker">Purosangue</div><div class="dialogue-text">«Был, давненько уже... Не подведу!»</div></div>
+    <div class="dialogue-row" data-delay="800"><div class="dialogue-speaker">Офицер</div><div class="dialogue-text">«Подскажите предыдущее место работы?»</div></div>
+    <div class="dialogue-row" data-delay="1000"><div class="dialogue-speaker">Purosangue</div><div class="dialogue-text">«Работал в новостях Сан-Фиерро, журналистом.»</div></div>
+    <div class="dialogue-row" data-delay="1200"><div class="dialogue-speaker">Офицер</div><div class="dialogue-text">«Вы приняты. Униформу можете подобрать в раздевалке на первом этаже.»</div></div>
+    <div class="dialogue-row" data-delay="1400"><div class="dialogue-speaker">Purosangue</div><div class="dialogue-text">«Спасибо, лейтенант!»</div></div>
+  </div>
+  <div class="pullquote reveal">
+    <div class="pullquote-text">«Вы приняты. Униформу можете подобрать в раздевалке на первом этаже.»</div>
+    <div class="pullquote-author">— Офицер · Внедрение завершено</div>
+  </div>
+  <div class="scene-nav">
+    <button class="nav-button" onclick="document.getElementById('scene01').scrollIntoView({behavior: 'smooth'})">← Предыдущая</button>
+    <button class="nav-button" onclick="document.getElementById('scene03').scrollIntoView({behavior: 'smooth'})">Следующая сцена →</button>
+  </div>
+</section>
+
+<div class="animated-divider"></div>
+
+<section class="section" id="scene03">
+  <div class="section-label">Сцена 03 · Полицейский департамент</div>
+  <div class="section-header">
+    <div class="section-num">03</div>
+    <h2 class="section-title">Странный мужчина <em>в коридоре</em></h2>
+  </div>
+  <div class="narrative">
+    <p>Ещё не успел получить униформу, как меня останавливают в коридоре. Человек в маске — необычный выбор для сотрудника полицейского департамента. Но он знает моё имя. И знает, откуда я.</p>
+    <p>Разговор начинается в проходе, но быстро становится ясно: здесь слишком много людей. Дмитрий предлагает перейти в более тихое место.</p>
+  </div>
+  <div class="photo-grid">
+    <div class="photo-item" data-photo="7">
+      <div class="photo-frame" onclick="openLightbox('img/7.jpg', 'Первая встреча · Проход полицейского департамента')">
+        <img src="img/7.jpg" alt="Дмитрий узнаёт журналиста">
+        <div class="hotspot" style="top: 30%; right: 20%;">1<div class="hotspot-tooltip">Dmitry Ner узнаёт журналиста</div></div>
+      </div>
+      <div class="photo-caption">
+        <div class="photo-meta"><span>Кадр 07 · Первая встреча</span><span>Проход полицейского департамента</span></div>
+        <div class="photo-text"><span class="speaker">Dmitry Ner</span>«Слушай, я тебя узнал — ты же Purosangue Sao из новостей?»</div>
+      </div>
+    </div>
+    <div class="photo-item" data-photo="8">
+      <div class="photo-frame" onclick="openLightbox('img/8.jpg', 'Разговор в проходе')">
+        <img src="img/8.jpg" alt="Разговор у серверной">
+        <div class="hotspot" style="top: 40%; left: 30%;">2<div class="hotspot-tooltip">Намёк на неладное</div></div>
+      </div>
+      <div class="photo-caption">
+        <div class="photo-meta"><span>Кадр 08</span><span>14:52</span></div>
+        <div class="photo-text"><span class="speaker">Dmitry Ner</span>«Здесь что-то происходит не ладное...»<br><br><span class="speaker">Purosangue Sao</span>«Это? Я как раз за этим?»</div>
+      </div>
+    </div>
+    <div class="photo-item" data-photo="9">
+      <div class="photo-frame" onclick="openLightbox('img/9.jpg', 'Первая зацепка · Архив')">
+        <img src="img/9.jpg" alt="Зацепка про вербовку">
+        <div class="hotspot" style="bottom: 30%; right: 25%;">3<div class="hotspot-tooltip">Ключевая информация</div></div>
+      </div>
+      <div class="photo-caption">
+        <div class="photo-meta"><span>Кадр 09 · Зацепка</span><span>14:55 · Архив</span></div>
+        <div class="photo-text"><span class="speaker">Dmitry Ner</span>«Лейтенант вербует армейцев с армии Лас-Вентураса, в одно и то же время.»<br><br><span class="speaker">Purosangue Sao</span>«Спасибо за информацию.»</div>
+      </div>
+    </div>
+  </div>
+  <div class="dialogue">
+    <div class="dialogue-row" data-delay="0"><div class="dialogue-speaker">Dmitry Ner</div><div class="dialogue-text">«Слушай, я тебя узнал — ты же Purosangue Sao из новостей?»</div></div>
+    <div class="dialogue-row" data-delay="200"><div class="dialogue-speaker">Purosangue Sao</div><div class="dialogue-text">«Да. А ты кто?»</div></div>
+    <div class="dialogue-row" data-delay="400"><div class="dialogue-speaker">Dmitry Ner</div><div class="dialogue-text">«Здесь что-то происходит не ладное...»</div></div>
+    <div class="dialogue-row" data-delay="600"><div class="dialogue-speaker">Purosangue Sao</div><div class="dialogue-text">«Это? Я как раз за этим.»</div></div>
+    <div class="dialogue-row" data-delay="800"><div class="dialogue-speaker">Dmitry Ner</div><div class="dialogue-text">«Пойдём в архив. Там никого не будет.»</div></div>
+    <div class="dialogue-row" data-delay="1000"><div class="dialogue-speaker">Dmitry Ner</div><div class="dialogue-text">«Лейтенант вербует армейцев с армии Лас-Вентураса, в одно и то же время.»</div></div>
+    <div class="dialogue-row" data-delay="1200"><div class="dialogue-speaker">Purosangue Sao</div><div class="dialogue-text">«Спасибо за информацию.»</div></div>
+  </div>
+  <div class="pullquote reveal">
+    <div class="pullquote-text">«Лейтенант вербует армейцев с армии Лас-Вентураса, в одно и то же время.»</div>
+    <div class="pullquote-author">— Dmitry Ner · Первая зацепка</div>
+  </div>
+  <div class="evidence-map reveal">
+    <div class="map-title">Карта связей · Сцена 03</div>
+    <div class="map-nodes">
+      <div class="map-node"><div class="map-node-circle">01</div><div class="map-node-label">Проход</div></div>
+      <div class="map-node"><div class="map-node-circle">02</div><div class="map-node-label">Разговор</div></div>
+      <div class="map-node"><div class="map-node-circle">03</div><div class="map-node-label">Архив</div></div>
+      <div class="map-node"><div class="map-node-circle">04</div><div class="map-node-label">Зацепка</div></div>
+    </div>
+  </div>
+  <div class="dossier reveal">
+    <div class="section-label" style="margin-bottom: 3rem;">Досье · Что известно сейчас</div>
+    <div class="dossier-grid">
+      <div>
+        <div class="dossier-photo-frame" onclick="openLightbox('img/10.jpg', 'Dmitry Ner · Досье')">
+          <img src="img/10.jpg" alt="Dmitry Ner">
+        </div>
+        <div class="dossier-photo-label">Фото · Серверная полицейского департамента</div>
+      </div>
+      <div>
+        <h3 class="dossier-name">Dmitry Ner</h3>
+        <div class="dossier-role">Источник · Подозреваемый</div>
+        <div class="dossier-fields">
+          <div class="dossier-field"><div class="dossier-field-label">Статус</div><div class="dossier-field-value">Сотрудник полицейского департамента (предположительно)</div></div>
+          <div class="dossier-field"><div class="dossier-field-label">Внешность</div><div class="dossier-field-value">Маска в стиле Ant-Man с красными глазами, жилет S.H.I.E.L.D., гражданская одежда</div></div>
+          <div class="dossier-field"><div class="dossier-field-label">Роль в расследовании</div><div class="dossier-field-value">Первичный источник. Сам вышел на контакт с журналистом в проходе, затем позвал в архив для конфиденциального разговора.</div></div>
+          <div class="dossier-field"><div class="dossier-field-label">Известная информация</div><div class="dossier-field-value">Узнал Purosangue Sao как журналиста San-Fierro News. Сообщил о неладном внутри полицейского департамента. Дал первую зацепку: лейтенант вербует армейцев из армии Лас-Вентураса за деньги в одно и то же время каждую неделю.</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="scene-nav">
+    <button class="nav-button" onclick="document.getElementById('scene02').scrollIntoView({behavior: 'smooth'})">← Предыдущая</button>
+    <button class="nav-button" onclick="document.getElementById('scene04').scrollIntoView({behavior: 'smooth'})">Следующая сцена →</button>
+  </div>
+</section>
+
+<div class="animated-divider"></div>
+
+<section class="section" id="scene04">
+  <div class="section-label">Сцена 04 · КПП военного округа</div>
+  <div class="section-header">
+    <div class="section-num">04</div>
+    <h2 class="section-title">Проверка <em>на месте</em></h2>
+  </div>
+  <div class="narrative">
+    <p>Зацепка конкретная: одно и то же время, каждую неделю. Проверяю лично. Ночь, пустая дорога, КПП на границе с Лас-Вентурасом.</p>
+    <p>Двадцать минут ожидания. Потом появляется патрульная машина — за рулём тот самый лейтенант, который принимал меня на работу. Следом военный джип. Встреча у шлагбаума, словно по расписанию.</p>
+  </div>
+  <div class="photo-grid">
+    <div class="photo-item" data-photo="13">
+      <div class="photo-frame" onclick="openLightbox('img/13.jpg', 'Наблюдение · Purosangue Sao фиксирует встречу')">
+        <img src="img/13.jpg" alt="Наблюдение с машины">
+        <div class="hotspot" style="top: 50%; left: 50%;">1<div class="hotspot-tooltip">Purosangue Sao — скрытое наблюдение</div></div>
+      </div>
+      <div class="photo-caption">
+        <div class="photo-meta"><span>Кадр 11 · Наблюдение</span><span>23:47</span></div>
+        <div class="photo-text"><span class="speaker">Purosangue Sao</span>Спрятался с камерой за своей машиной у КПП. Выключил фары. Стал ждать.</div>
+      </div>
+    </div>
+    <div class="photo-item" data-photo="11">
+      <div class="photo-frame" onclick="openLightbox('img/11.jpg', 'Вербовка · Первая часть разговора на КПП')">
+        <img src="img/11.jpg" alt="Разговор на КПП">
+        <div class="hotspot" style="top: 30%; right: 30%;">2<div class="hotspot-tooltip">Maxence Lacroix — лейтенант полицейского департамента</div></div>
+        <div class="hotspot" style="bottom: 40%; right: 20%;">3<div class="hotspot-tooltip">Tommy Freeze — военный</div></div>
+      </div>
+      <div class="photo-caption">
+        <div class="photo-meta"><span>Кадр 12 · Контакт</span><span>00:12</span></div>
+        <div class="photo-text"><span class="speaker">Maxence Lacroix</span>«Короче, у нас есть вариант с тобой бабки порубить нормальные. Так...»</div>
+      </div>
+    </div>
+    <div class="photo-item" data-photo="12">
+      <div class="photo-frame" onclick="openLightbox('img/12.jpg', 'Условия сделки · 4.5 миллиона долларов')">
+        <img src="img/12.jpg" alt="Условия вербовки">
+        <div class="hotspot" style="top: 40%; left: 40%;">4<div class="hotspot-tooltip">Ключевая фраза: «4.5 миллиона долларов»</div></div>
+      </div>
+      <div class="photo-caption">
+        <div class="photo-meta"><span>Кадр 13 · Условия</span><span>00:15</span></div>
+        <div class="photo-text"><span class="speaker">Maxence Lacroix</span>«Смотри, по условиям 4.5 миллиона долларов тебе, и мне тоже. Если ты согласен с доками — я сам займусь. Давай.»</div>
+      </div>
+    </div>
+  </div>
+  <div class="dialogue">
+    <div class="dialogue-row" data-delay="0"><div class="dialogue-speaker">Maxence Lacroix</div><div class="dialogue-text">«Короче, у нас есть вариант с тобой бабки порубить нормальные. Так...»</div></div>
+    <div class="dialogue-row" data-delay="200"><div class="dialogue-speaker">Tommy Freeze</div><div class="dialogue-text">«Так...»</div></div>
+    <div class="dialogue-row" data-delay="400"><div class="dialogue-speaker">Maxence Lacroix</div><div class="dialogue-text">«Смотри, по условиям 4.5 миллиона долларов тебе, и мне тоже. Если ты согласен с доками — я сам займусь.»</div></div>
+    <div class="dialogue-row" data-delay="600"><div class="dialogue-speaker">Tommy Freeze</div><div class="dialogue-text">«Давай.»</div></div>
+  </div>
+  <div class="pullquote reveal">
+    <div class="pullquote-text">«Смотри, по условиям 4.5 миллиона долларов тебе, и мне тоже. Если ты согласен с доками — я сам займусь.»</div>
+    <div class="pullquote-author">— Maxence Lacroix · КПП военного округа · 00:15</div>
+  </div>
+
+  <div class="question-note reveal">
+    <div class="question-note-label">Вопрос расследования</div>
+    <div class="question-note-text">Откуда Дмитрий мог знать об этом?</div>
+    <div class="question-note-hint">Обычный сотрудник полицейского департамента не может знать о регулярных встречах на КПП военного округа. Этот вопрос будет преследовать меня до конца расследования.</div>
+  </div>
+
+  <div class="evidence-map reveal">
+    <div class="map-title">Карта связей · Сцена 04</div>
+    <div class="map-nodes">
+      <div class="map-node"><div class="map-node-circle">01</div><div class="map-node-label">Наблюдение</div></div>
+      <div class="map-node"><div class="map-node-circle">02</div><div class="map-node-label">Контакт</div></div>
+      <div class="map-node"><div class="map-node-circle">03</div><div class="map-node-label">Сделка</div></div>
+      <div class="map-node"><div class="map-node-circle">04</div><div class="map-node-label">4.5 млн $</div></div>
+    </div>
+  </div>
+  <div class="dossier reveal">
+    <div class="section-label" style="margin-bottom: 3rem;">Досье · Новые фигуранты</div>
+    <div class="dossier-grid">
+      <div>
+        <div class="dossier-photo-frame" onclick="openLightbox('img/11.jpg', 'Maxence Lacroix · КПП')">
+          <img src="img/11.jpg" alt="Maxence Lacroix">
+        </div>
+        <div class="dossier-photo-label">Фото · КПП военного округа</div>
+      </div>
+      <div>
+        <h3 class="dossier-name">Maxence Lacroix</h3>
+        <div class="dossier-role">Лейтенант полицейского департамента · Подозреваемый №1</div>
+        <div class="dossier-fields">
+          <div class="dossier-field"><div class="dossier-field-label">Статус</div><div class="dossier-field-value">Лейтенант полицейского департамента. <strong>Тот самый офицер, который проводил собеседование и принимал журналиста на работу в сцене 02.</strong></div></div>
+          <div class="dossier-field"><div class="dossier-field-label">Действия</div><div class="dossier-field-value">Зафиксирован на КПП военного округа. Вербует армейского бойца Tommy Freeze за денежное вознаграждение. Использует поддельные документы («доки») для оформления вербовки.</div></div>
+          <div class="dossier-field"><div class="dossier-field-label">Сумма сделки</div><div class="dossier-field-value accent">4.5 миллиона долларов — каждому участнику сделки. Итого 9 миллионов долларов за одного завербованного бойца.</div></div>
+          <div class="dossier-field"><div class="dossier-field-label">Метод</div><div class="dossier-field-value">Регулярные встречи в одно и то же время каждую неделю на КПП военного округа. Отработанная схема с использованием поддельных документов.</div></div>
+          <div class="dossier-field"><div class="dossier-field-label">Связь с расследованием</div><div class="dossier-field-value">Предположительно тот самый «лейтенант», о котором говорил Dmitry Ner в архиве. Лично принимал журналиста на работу, что создаёт дополнительный риск разоблачения.</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="scene-nav">
+    <button class="nav-button" onclick="document.getElementById('scene03').scrollIntoView({behavior: 'smooth'})">← Предыдущая</button>
+    <button class="nav-button" onclick="document.getElementById('scene05').scrollIntoView({behavior: 'smooth'})">Следующая сцена →</button>
+  </div>
+</section>
+
+<div class="animated-divider"></div>
+
+<section class="section" id="scene05">
+  <div class="section-label">Сцена 05 · Серверная полицейского департамента</div>
+  <div class="section-header">
+    <div class="section-num">05</div>
+    <h2 class="section-title">Возвращение к <em>источнику</em></h2>
+  </div>
+  <div class="narrative">
+    <p>Возвращаюсь к Дмитрию. Наводка оказалась точной — нужно понять, откуда он знал такие детали. Обычный сотрудник не может знать о встречах на КПП.</p>
+    <p>Встречаемся в серверной. Разговор идёт иначе — я смотрю на него с подозрением, он это чувствует.</p>
+  </div>
+  <div class="photo-grid">
+    <div class="photo-item" data-photo="14">
+      <div class="photo-frame" onclick="openLightbox('img/14.jpg', 'Разговор с Дмитрием · Серверная')">
+        <img src="img/14.jpg" alt="Разговор с Дмитрием">
+        <div class="hotspot" style="top: 40%; left: 30%;">1<div class="hotspot-tooltip">Purosangue Sao задаёт вопрос</div></div>
+        <div class="hotspot" style="top: 40%; right: 30%;">2<div class="hotspot-tooltip">Dmitry Ner уклончиво отвечает</div></div>
+      </div>
+      <div class="photo-caption">
+        <div class="photo-meta"><span>Кадр 14 · Вопрос</span><span>Серверная полицейского департамента</span></div>
+        <div class="photo-text"><span class="speaker">Purosangue Sao</span>«Твоя наводка оказалась правдивой! Но откуда ты узнал об этом?»<br><br><span class="speaker">Dmitry Ner</span>«Я давно уже тут... Много чего знаю...»</div>
+      </div>
+    </div>
+    <div class="photo-item" data-photo="15">
+      <div class="photo-frame" onclick="openLightbox('img/15.jpg', 'Приглашение в архив')">
+        <img src="img/15.jpg" alt="Приглашение в архив">
+        <div class="hotspot" style="top: 40%; left: 30%;">3<div class="hotspot-tooltip">Purosangue Sao спрашивает о дополнительной информации</div></div>
+        <div class="hotspot" style="top: 40%; right: 30%;">4<div class="hotspot-tooltip">Dmitry Ner приглашает в архив ночью</div></div>
+      </div>
+      <div class="photo-caption">
+        <div class="photo-meta"><span>Кадр 15 · Приглашение</span><span>Серверная полицейского департамента</span></div>
+        <div class="photo-text"><span class="speaker">Purosangue Sao</span>«Какая у тебя информация ещё есть?»<br><br><span class="speaker">Dmitry Ner</span>«Приходи сегодня ночью, архив будет открыт, сам посмотришь...»</div>
+      </div>
+    </div>
+  </div>
+  <div class="dialogue">
+    <div class="dialogue-row" data-delay="0"><div class="dialogue-speaker">Purosangue Sao</div><div class="dialogue-text">«Твоя наводка оказалась правдивой! Но откуда ты узнал об этом?»</div></div>
+    <div class="dialogue-row" data-delay="200"><div class="dialogue-speaker">Dmitry Ner</div><div class="dialogue-text">«Я давно уже тут... Много чего знаю...»</div></div>
+    <div class="dialogue-row" data-delay="400"><div class="dialogue-speaker">Purosangue Sao</div><div class="dialogue-text">«Какая у тебя информация ещё есть?»</div></div>
+    <div class="dialogue-row" data-delay="600"><div class="dialogue-speaker">Dmitry Ner</div><div class="dialogue-text">«Приходи сегодня ночью, архив будет открыт, сам посмотришь...»</div></div>
+  </div>
+  <div class="pullquote reveal">
+    <div class="pullquote-text">«Приходи сегодня ночью, архив будет открыт, сам посмотришь...»</div>
+    <div class="pullquote-author">— Dmitry Ner · Приглашение в архив</div>
+  </div>
+  <div class="evidence-map reveal">
+    <div class="map-title">Карта связей · Сцена 05</div>
+    <div class="map-nodes">
+      <div class="map-node"><div class="map-node-circle">01</div><div class="map-node-label">Вопрос</div></div>
+      <div class="map-node"><div class="map-node-circle">02</div><div class="map-node-label">Уклончивый ответ</div></div>
+      <div class="map-node"><div class="map-node-circle">03</div><div class="map-node-label">Новый запрос</div></div>
+      <div class="map-node"><div class="map-node-circle">04</div><div class="map-node-label">Архив ночью</div></div>
+    </div>
+  </div>
+  <div class="scene-nav">
+    <button class="nav-button" onclick="document.getElementById('scene04').scrollIntoView({behavior: 'smooth'})">← Предыдущая</button>
+    <button class="nav-button" onclick="document.getElementById('scene06').scrollIntoView({behavior: 'smooth'})">Следующая сцена →</button>
+  </div>
+</section>
+
+<div class="animated-divider"></div>
+
+<section class="section" id="scene06">
+  <div class="section-label">Сцена 06 · Архив полицейского департамента · Ночь</div>
+  <div class="section-header">
+    <div class="section-num">06</div>
+    <h2 class="section-title">Ночной визит <em>в архив</em></h2>
+  </div>
+  <div class="narrative">
+    <p>Полночь. Полицейский департамент спит, только дежурный на первом этаже. Поднимаюсь на второй — к архиву. Дверь открыта, как и обещал Дмитрий.</p>
+    <p>Начинаю с бумажных документов — ящики, папки, протоколы. Потом перехожу к компьютеру. База данных полицейского департамента.</p>
+    <p>Результат неожиданный: систематические несоответствия. Поддельные подписи, изменённые даты, дела закрытые без оснований. Кто-то целенаправленно фальсифицирует документы.</p>
+  </div>
+  <div class="photo-grid">
+    <div class="photo-item" data-photo="16">
+      <div class="photo-frame" onclick="openLightbox('img/16.jpg', 'Архив · Поиск в документах')">
+        <img src="img/16.jpg" alt="Архив со стеллажами">
+        <div class="hotspot" style="top: 50%; right: 30%;">1<div class="hotspot-tooltip">Purosangue Sao открывает ящик с документами</div></div>
+      </div>
+      <div class="photo-caption">
+        <div class="photo-meta"><span>Кадр 16 · Документы</span><span>00:47 · Архив полицейского департамента</span></div>
+        <div class="photo-text"><span class="speaker">Purosangue Sao</span>Открываю ящик с документами.</div>
+      </div>
+    </div>
+    <div class="photo-item" data-photo="17">
+      <div class="photo-frame" onclick="openLightbox('img/17.jpg', 'Компьютер · Несоответствие в данных')">
+        <img src="img/17.jpg" alt="Компьютер в архиве">
+        <div class="hotspot" style="top: 50%; left: 50%;">2<div class="hotspot-tooltip">Purosangue Sao находит несоответствие в данных</div></div>
+      </div>
+      <div class="photo-caption">
+        <div class="photo-meta"><span>Кадр 17 · База данных</span><span>01:23 · Архив полицейского департамента</span></div>
+        <div class="photo-text"><span class="speaker">Purosangue Sao</span>Нашёл несоответствие в данных.</div>
+      </div>
+    </div>
+  </div>
+  <div class="dialogue">
+    <div class="dialogue-row" data-delay="0"><div class="dialogue-speaker">Purosangue Sao</div><div class="dialogue-text">«Открываю ящик с документами...»</div></div>
+    <div class="dialogue-row" data-delay="400"><div class="dialogue-speaker">Purosangue Sao</div><div class="dialogue-text">«Протоколы не сходятся с актами. Даты изменены. Подписи поддельные.»</div></div>
+    <div class="dialogue-row" data-delay="800"><div class="dialogue-speaker">Purosangue Sao</div><div class="dialogue-text">«Нашёл несоответствие в данных. Кто-то систематически фальсифицирует документы полицейского департамента.»</div></div>
+  </div>
+  <div class="pullquote reveal">
+    <div class="pullquote-text">«Протоколы не сходятся с актами. Даты изменены. Подписи поддельные. Дела закрываются без оснований.»</div>
+    <div class="pullquote-author">— Purosangue Sao · Архив полицейского департамента · 01:23</div>
+  </div>
+  <div class="evidence-map reveal">
+    <div class="map-title">Карта связей · Сцена 06</div>
+    <div class="map-nodes">
+      <div class="map-node"><div class="map-node-circle">01</div><div class="map-node-label">Вход в архив</div></div>
+      <div class="map-node"><div class="map-node-circle">02</div><div class="map-node-label">Ящики</div></div>
+      <div class="map-node"><div class="map-node-circle">03</div><div class="map-node-label">Компьютер</div></div>
+      <div class="map-node"><div class="map-node-circle">04</div><div class="map-node-label">Несоответствие</div></div>
+    </div>
+  </div>
+  <div class="scene-nav">
+    <button class="nav-button" onclick="document.getElementById('scene05').scrollIntoView({behavior: 'smooth'})">← Предыдущая</button>
+    <button class="nav-button" onclick="document.getElementById('scene07').scrollIntoView({behavior: 'smooth'})">Следующая сцена →</button>
+  </div>
+</section>
+
+<div class="animated-divider"></div>
+
+<section class="section" id="scene07">
+  <div class="section-label">Сцена 07 · Кабинет Deputy Chief · Ночь</div>
+  <div class="section-header">
+    <div class="section-num">07</div>
+    <h2 class="section-title">Шаги в темноте. <em>Сделка за закрытое дело.</em></h2>
+  </div>
+  <div class="narrative">
+    <p>Собираюсь уходить — слышу шаги. Замираю в тени. Щёлкает выключатель, свет заливает кабинет Deputy Chief.</p>
+    <p>Вижу Maxence Lacroix за столом. Через минуту входит человек в чёрной толстовке — Isee Gvozdoder. Разговор короткий, деловой.</p>
+    <p>На столе оказывается пачка денег. Сумма впечатляет. Лейтенант даже не пересчитывает — отпускает посетителя одной фразой.</p>
+    <p>Теперь понятно, что стояло за фальсификациями в архиве. Это не просто коррупция — это продажа правосудия. Каждое закрытое дело имеет цену.</p>
+  </div>
+  <div class="photo-grid">
+    <div class="photo-item" data-photo="18">
+      <div class="photo-frame" onclick="openLightbox('img/18.jpg', 'Момент передачи · «Принёс?»')">
+        <img src="img/18.jpg" alt="Maxence Lacroix и Isee Gvozdoder">
+        <div class="hotspot" style="top: 30%; left: 35%;">1<div class="hotspot-tooltip">Maxence Lacroix — лейтенант за столом Deputy Chief</div></div>
+        <div class="hotspot" style="top: 40%; right: 25%;">2<div class="hotspot-tooltip">Isee Gvozdoder — посетитель в чёрной толстовке</div></div>
+      </div>
+      <div class="photo-caption">
+        <div class="photo-meta"><span>Кадр 18 · Передача</span><span>02:14 · Кабинет Deputy Chief</span></div>
+        <div class="photo-text">
+          <span class="speaker">Maxence Lacroix</span>«Принёс?»<br><br>
+          <span class="speaker">Isee Gvozdoder</span>«Принёс.»
+        </div>
+      </div>
+    </div>
+    <div class="photo-item" data-photo="19">
+      <div class="photo-frame" onclick="openLightbox('img/19.jpg', '70 000$ на столе · «Свободен»')">
+        <img src="img/19.jpg" alt="Деньги на столе">
+        <div class="hotspot" style="top: 55%; left: 45%;">3<div class="hotspot-tooltip">Пачка купюр на столе — 70 000$</div></div>
+        <div class="hotspot" style="top: 30%; left: 35%;">4<div class="hotspot-tooltip">Maxence Lacroix отпускает посетителя</div></div>
+      </div>
+      <div class="photo-caption">
+        <div class="photo-meta"><span>Кадр 19 · Расплата</span><span>02:15 · Кабинет Deputy Chief</span></div>
+        <div class="photo-text">
+          <span class="speaker">Isee Gvozdoder</span>Кинул 70 000$ на стол.<br><br>
+          <span class="speaker">Maxence Lacroix</span>«Поаккуратнее... Свободен.»
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="dialogue">
+    <div class="dialogue-row" data-delay="0"><div class="dialogue-speaker">Maxence Lacroix</div><div class="dialogue-text">«Принёс?»</div></div>
+    <div class="dialogue-row" data-delay="200"><div class="dialogue-speaker">Isee Gvozdoder</div><div class="dialogue-text">«Принёс.»</div></div>
+    <div class="dialogue-row" data-delay="400"><div class="dialogue-speaker">Isee Gvozdoder</div><div class="dialogue-text">*кинул 70 000$ на стол*</div></div>
+    <div class="dialogue-row" data-delay="600"><div class="dialogue-speaker">Maxence Lacroix</div><div class="dialogue-text">«Поаккуратнее... Свободен.»</div></div>
+  </div>
+  <div class="pullquote reveal">
+    <div class="pullquote-text">«Поаккуратнее... Свободен.»</div>
+    <div class="pullquote-author">— Maxence Lacroix · После получения 70 000$ за закрытое дело</div>
+  </div>
+  <div class="evidence-map reveal">
+    <div class="map-title">Карта связей · Сцена 07</div>
+    <div class="map-nodes">
+      <div class="map-node"><div class="map-node-circle">01</div><div class="map-node-label">Шаги</div></div>
+      <div class="map-node"><div class="map-node-circle">02</div><div class="map-node-label">Свет</div></div>
+      <div class="map-node"><div class="map-node-circle">03</div><div class="map-node-label">Передача</div></div>
+      <div class="map-node"><div class="map-node-circle">04</div><div class="map-node-label">70 000$</div></div>
+    </div>
+  </div>
+  <div class="dossier reveal">
+    <div class="section-label" style="margin-bottom: 3rem;">Досье · Новый фигурант</div>
+    <div class="dossier-grid">
+      <div>
+        <div class="dossier-photo-frame" onclick="openLightbox('img/19.jpg', 'Isee Gvozdoder · Взяткодатель')">
+          <img src="img/19.jpg" alt="Isee Gvozdoder">
+        </div>
+        <div class="dossier-photo-label">Фото · Кабинет Deputy Chief · 02:15</div>
+      </div>
+      <div>
+        <h3 class="dossier-name">Isee Gvozdoder</h3>
+        <div class="dossier-role">Гражданское лицо · Взяткодатель</div>
+        <div class="dossier-fields">
+          <div class="dossier-field"><div class="dossier-field-label">Статус</div><div class="dossier-field-value">Не установлен. Предположительно клиент лейтенанта — человек, чьё дело должно было быть закрыто.</div></div>
+          <div class="dossier-field"><div class="dossier-field-label">Внешность</div><div class="dossier-field-value">Чёрная толстовка с капюшоном, тёмные шорты, босиком в сандалиях. Лицо скрыто капюшоном.</div></div>
+          <div class="dossier-field"><div class="dossier-field-label">Действия</div><div class="dossier-field-value">Прибыл в кабинет Deputy Chief ночью по предварительной договорённости. Передал Maxence Lacroix взятку в размере 70 000$ за закрытие дела.</div></div>
+          <div class="dossier-field"><div class="dossier-field-label">Сумма взятки</div><div class="dossier-field-value accent">70 000$ — единовременная выплата за одно закрытое дело. Предположительно, не единственный подобный случай.</div></div>
+          <div class="dossier-field"><div class="dossier-field-label">Связь с заговором</div><div class="dossier-field-value">Возможно, один из многих «клиентов» лейтенанта. Его визит подтверждает, что фальсификация документов носила систематический и коммерческий характер.</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="scene-nav">
+    <button class="nav-button" onclick="document.getElementById('scene06').scrollIntoView({behavior: 'smooth'})">← Предыдущая</button>
+    <button class="nav-button" onclick="document.getElementById('scene08').scrollIntoView({behavior: 'smooth'})">Следующая сцена →</button>
+  </div>
+</section>
+
+<div class="animated-divider"></div>
+
+<section class="section" id="scene08">
+  <div class="section-label">Сцена 08 · Офис редакции San-Fierro News · Утро</div>
+  <div class="section-header">
+    <div class="section-num">08</div>
+    <h2 class="section-title">Доклад <em>директору</em></h2>
+  </div>
+  <div class="narrative">
+    <p>Ночь в архиве и увиденная взятка — это уже не просто подозрения. У меня на руках конкретные доказательства: фальсифицированные документы, запись разговора на КПП, фото передачи денег. Пора докладывать.</p>
+    <p>Возвращаюсь в редакцию San-Fierro News. Jonny Wilde ждёт в кабинете — тот самый, с золотыми дисками на стене. Он не удивлён моему визиту. Скорее, ждал его.</p>
+    <p>Короткий разговор. Я показываю доказательства. Он кивает — без эмоций, как человек, который уже всё понял. Решение принимается мгновенно.</p>
+    <p>Завтра ночью — снова в архив. Там ещё много того, что нужно найти.</p>
+  </div>
+  <div class="photo-grid">
+    <div class="photo-item" data-photo="20">
+      <div class="photo-frame" onclick="openLightbox('img/20.jpg', 'Доклад директору · Кабинет San-Fierro News')">
+        <img src="img/20.jpg" alt="Доклад Jonny Wilde">
+        <div class="hotspot" style="top: 35%; left: 35%;">1<div class="hotspot-tooltip">Jonny Wilde — генеральный директор San-Fierro News</div></div>
+        <div class="hotspot" style="top: 40%; right: 30%;">2<div class="hotspot-tooltip">Purosangue Sao докладывает о находках</div></div>
+      </div>
+      <div class="photo-caption">
+        <div class="photo-meta"><span>Кадр 20 · Доклад</span><span>Кабинет директора · San-Fierro News</span></div>
+        <div class="photo-text">
+          <span class="speaker">Jonny Wilde</span>«Неужели? Что то уже добыл?»<br><br>
+          <span class="speaker">Purosangue Sao</span>«Шеф, информация источника подтвердилась. В полиции происходит неладное!»
+        </div>
+      </div>
+    </div>
+    <div class="photo-item" data-photo="21">
+      <div class="photo-frame" onclick="openLightbox('img/21.jpg', 'Показ доказательств · Продолжение расследования')">
+        <img src="img/21.jpg" alt="Показ доказательств">
+        <div class="hotspot" style="top: 40%; left: 30%;">3<div class="hotspot-tooltip">Purosangue Sao показывает доказательства</div></div>
+        <div class="hotspot" style="top: 55%; right: 35%;">4<div class="hotspot-tooltip">Jonny Wilde одобряет продолжение</div></div>
+      </div>
+      <div class="photo-caption">
+        <div class="photo-meta"><span>Кадр 21 · Решение</span><span>Кабинет директора · San-Fierro News</span></div>
+        <div class="photo-text">
+          <span class="speaker">Purosangue Sao</span>«Вот смотри шеф.» *показывает доказательства*<br><br>
+          <span class="speaker">Jonny Wilde</span>«Отлично Пьюросанджи! Продолжай расследование.»
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="dialogue">
+    <div class="dialogue-row" data-delay="0"><div class="dialogue-speaker">Jonny Wilde</div><div class="dialogue-text">«Неужели? Что то уже добыл?»</div></div>
+    <div class="dialogue-row" data-delay="200"><div class="dialogue-speaker">Purosangue Sao</div><div class="dialogue-text">«Шеф, информация источника подтвердилась. В полиции происходит неладное!»</div></div>
+    <div class="dialogue-row" data-delay="400"><div class="dialogue-speaker">Purosangue Sao</div><div class="dialogue-text">«Вот смотри шеф.» *показывает доказательства*</div></div>
+    <div class="dialogue-row" data-delay="600"><div class="dialogue-speaker">Jonny Wilde</div><div class="dialogue-text">«Отлично Пьюросанджи! Продолжай расследование.»</div></div>
+  </div>
+  <div class="pullquote reveal">
+    <div class="pullquote-text">«Отлично Пьюросанджи! Продолжай расследование.»</div>
+    <div class="pullquote-author">— Jonny Wilde · После просмотра доказательств</div>
+  </div>
+  <div class="evidence-map reveal">
+    <div class="map-title">Карта связей · Сцена 08</div>
+    <div class="map-nodes">
+      <div class="map-node"><div class="map-node-circle">01</div><div class="map-node-label">Возврат в San-Fierro News</div></div>
+      <div class="map-node"><div class="map-node-circle">02</div><div class="map-node-label">Доклад</div></div>
+      <div class="map-node"><div class="map-node-circle">03</div><div class="map-node-label">Доказательства</div></div>
+      <div class="map-node"><div class="map-node-circle">04</div><div class="map-node-label">Продолжение</div></div>
+    </div>
+  </div>
+  <div class="scene-nav">
+    <button class="nav-button" onclick="document.getElementById('scene07').scrollIntoView({behavior: 'smooth'})">← Предыдущая</button>
+    <button class="nav-button" onclick="document.getElementById('scene09').scrollIntoView({behavior: 'smooth'})">Следующая сцена →</button>
+  </div>
+</section>
+
+<div class="animated-divider"></div>
+
+<section class="section" id="scene09">
+  <div class="section-label">Сцена 09 · Архив полицейского департамента · Следующая ночь</div>
+  <div class="section-header">
+    <div class="section-num">09</div>
+    <h2 class="section-title">Секретный протокол · <em>Список сторонников</em></h2>
+  </div>
+  <div class="narrative">
+    <p>Следующая ночь. Архив снова пуст. Директор дал добро — теперь я ищу не просто несоответствия, а конкретный документ о смене руководства. Дмитрий упоминал об этом вскользь, но тогда я не придал значения.</p>
+    <p>Сажусь за тот же стол. Открываю папку за папкой. Большинство — рутина, скучные отчёты. Но одна папка отличается: плотная обложка, нет номера, нет даты регистрации. Внутри — несколько страниц, плотно исписанных от руки.</p>
+    <p>Протокол. Секретный. Не просто план — <strong>список сторонников смены Шерифа Фридриха</strong>. Имена, должности, роли. Всё структурировано, как план операции. Те, кто готов действовать. Те, кто уже действует.</p>
+    <p>Листаю дальше. И тогда вижу его. Имя, которое я уже знаю слишком хорошо. Дмитрий — не просто источник. Он <strong>в списке</strong>. Один из тех, кто хочет свергнуть Шерифа.</p>
+  </div>
+  <div class="photo-grid">
+    <div class="photo-item" data-photo="22">
+      <div class="photo-frame" onclick="openLightbox('img/22.jpg', 'Поиск в архиве · Листает страницы документа')">
+        <img src="img/22.jpg" alt="Purosangue листает документ">
+        <div class="hotspot" style="top: 45%; left: 45%;">1<div class="hotspot-tooltip">Purosangue Sao листает страницы документа</div></div>
+      </div>
+      <div class="photo-caption">
+        <div class="photo-meta"><span>Кадр 22 · Поиск</span><span>Архив полицейского департамента · Ночь</span></div>
+        <div class="photo-text"><span class="speaker">Purosangue Sao</span>Листает страницы документа, после чего нашёл секретный протокол.</div>
+      </div>
+    </div>
+    <div class="photo-item" data-photo="23">
+      <div class="photo-frame" onclick="openLightbox('img/23.jpg', 'Содержание протокола · Списки сторонников смены Шерифа')">
+        <img src="img/23.jpg" alt="Содержание протокола">
+        <div class="hotspot" style="top: 40%; left: 40%;">2<div class="hotspot-tooltip">В протоколе — списки сотрудников за смену Шерифа Фридриха</div></div>
+      </div>
+      <div class="photo-caption">
+        <div class="photo-meta"><span>Кадр 23 · Протокол</span><span>Архив полицейского департамента · Ночь</span></div>
+        <div class="photo-text">В протоколе написано: списки сотрудников за смену руководства — смену Шерифа Фридриха.</div>
+      </div>
+    </div>
+    <div class="photo-item" data-photo="24">
+      <div class="photo-frame" onclick="openLightbox('img/24.jpg', 'Повторное изучение документа')">
+        <img src="img/24.jpg" alt="Повторное изучение">
+        <div class="hotspot" style="top: 45%; left: 45%;">3<div class="hotspot-tooltip">Purosangue Sao внимательно изучает документ</div></div>
+      </div>
+      <div class="photo-caption">
+        <div class="photo-meta"><span>Кадр 24 · Изучение</span><span>Архив полицейского департамента · Ночь</span></div>
+        <div class="photo-text">В протоколе написано: списки сотрудников за смену руководства.</div>
+      </div>
+    </div>
+    <div class="photo-item" data-photo="25">
+      <div class="photo-frame" onclick="openLightbox('img/25.jpg', 'Находка · Имя Дмитрия в списке сторонников')">
+        <img src="img/25.jpg" alt="Имя Дмитрия в документе">
+        <div class="hotspot" style="top: 40%; left: 40%;">4<div class="hotspot-tooltip">В списке сторонников — имя ДМИТРИЯ</div></div>
+      </div>
+      <div class="photo-caption">
+        <div class="photo-meta"><span>Кадр 25 · Находка</span><span>Архив полицейского департамента · Ночь</span></div>
+        <div class="photo-text"><span class="speaker">Purosangue Sao</span>«На имя, ДМИТРИЯ? — сказал Purosangue Sao, всматриваясь в документ.»</div>
+      </div>
+    </div>
+  </div>
+  <div class="dialogue">
+    <div class="dialogue-row" data-delay="0"><div class="dialogue-speaker">Purosangue Sao</div><div class="dialogue-text">«Листаю страницы... Обычные отчёты... Стоп.»</div></div>
+    <div class="dialogue-row" data-delay="300"><div class="dialogue-speaker">Purosangue Sao</div><div class="dialogue-text">«Секретный протокол. Без номера, без даты регистрации.»</div></div>
+    <div class="dialogue-row" data-delay="600"><div class="dialogue-speaker">Purosangue Sao</div><div class="dialogue-text">«Список сторонников смены Шерифа Фридриха. Имена, должности, роли.»</div></div>
+    <div class="dialogue-row" data-delay="900"><div class="dialogue-speaker">Purosangue Sao</div><div class="dialogue-text">«На имя... ДМИТРИЯ? Он в списке.»</div></div>
+  </div>
+  <div class="pullquote reveal">
+    <div class="pullquote-text">«На имя, ДМИТРИЯ? Он в списке сторонников смены Шерифа Фридриха.»</div>
+    <div class="pullquote-author">— Purosangue Sao · Архив полицейского департамента · Ночь</div>
+  </div>
+
+  <div class="question-note reveal">
+    <div class="question-note-label">Вопрос расследования</div>
+    <div class="question-note-text">Кто такой Дмитрий на самом деле?</div>
+    <div class="question-note-hint">Источник, который привёл меня к заговору, сам оказался в списке заговорщиков. Осведомитель или архитектор схемы? Ответ на этот вопрос определит исход всего расследования.</div>
+  </div>
+
+  <div class="evidence-map reveal">
+    <div class="map-title">Карта связей · Сцена 09</div>
+    <div class="map-nodes">
+      <div class="map-node"><div class="map-node-circle">01</div><div class="map-node-label">Архив</div></div>
+      <div class="map-node"><div class="map-node-circle">02</div><div class="map-node-label">Протокол</div></div>
+      <div class="map-node"><div class="map-node-circle">03</div><div class="map-node-label">Список сторонников</div></div>
+      <div class="map-node"><div class="map-node-circle">04</div><div class="map-node-label">Имя Дмитрия</div></div>
+    </div>
+  </div>
+  <div class="scene-nav">
+    <button class="nav-button" onclick="document.getElementById('scene08').scrollIntoView({behavior: 'smooth'})">← Предыдущая</button>
+    <button class="nav-button" onclick="document.getElementById('scene10').scrollIntoView({behavior: 'smooth'})">Следующая сцена →</button>
+  </div>
+</section>
+
+<div class="animated-divider"></div>
+
+<section class="section" id="scene10">
+  <div class="section-label">Сцена 10 · Конференц-зал · Ночь</div>
+  <div class="section-header">
+    <div class="section-num">10</div>
+    <h2 class="section-title">Правда за стеклом · <em>Финальное наблюдение</em></h2>
+  </div>
+  <div class="narrative">
+    <p>Я всё ещё сижу в архиве, переваривая находку. Имя Дмитрия в протоколе. Он был в списке сторонников смены Шерифа. Но как? Он же помогал мне...</p>
+    <p>Щёлкает выключатель. Свет заливает конференц-зал в конце коридора. Я замираю. Кто-то там.</p>
+    <p>Подхожу тихо, прижимаюсь к стене. Заглядываю через окно. И вижу то, что переворачивает всё.</p>
+    <p><strong>Maxence Lacroix и Dmitry Ner.</strong> Вместе. У доски с картой заговора. Maxence кладёт на стол конверт. Dmitry берёт его. Они говорят о "революции".</p>
+    <p>Всё становится ясно. Дмитрий не был осведомителем. Он был <strong>соучастником</strong>. Он использовал меня, чтобы устранить конкурентов и остаться единственным, кто "помогал расследованию".</p>
+    <p>Я достаю камеру. Фиксирую всё. Это последнее доказательство. Расследование закрыто.</p>
+  </div>
+  <div class="photo-grid">
+    <div class="photo-item" data-photo="26">
+      <div class="photo-frame" onclick="openLightbox('img/26.jpg', 'Maxence и Dmitry · Разговор о революции')">
+        <img src="img/26.jpg" alt="Maxence и Dmitry у доски">
+        <div class="hotspot" style="top: 40%; left: 35%;">1<div class="hotspot-tooltip">Dmitry Ner — соучастник заговора</div></div>
+        <div class="hotspot" style="top: 40%; right: 30%;">2<div class="hotspot-tooltip">Maxence Lacroix — лейтенант полицейского департамента</div></div>
+      </div>
+      <div class="photo-caption">
+        <div class="photo-meta"><span>Кадр 26 · Разговор</span><span>Конференц-зал · Ночь</span></div>
+        <div class="photo-text">
+          <span class="speaker">Dmitry Ner</span>«Отлично... это новый шаг к революции...»<br><br>
+          <span class="speaker">Maxence Lacroix</span>«Вот твои деньги за прошлое. Поверь, он будет молчать.»
+        </div>
+      </div>
+    </div>
+    <div class="photo-item" data-photo="27">
+      <div class="photo-frame" onclick="openLightbox('img/27.jpg', 'Передача конверта · 35 000$')">
+        <img src="img/27.jpg" alt="Передача денег">
+        <div class="hotspot" style="top: 50%; left: 40%;">3<div class="hotspot-tooltip">Конверт с 35 000$ на столе</div></div>
+        <div class="hotspot" style="top: 50%; right: 35%;">4<div class="hotspot-tooltip">Dmitry берёт конверт</div></div>
+      </div>
+      <div class="photo-caption">
+        <div class="photo-meta"><span>Кадр 27 · Передача</span><span>Конференц-зал · Ночь</span></div>
+        <div class="photo-text">
+          <span class="speaker">Maxence Lacroix</span>Положил на стол конверт с 35 000 долларов.<br><br>
+          <span class="speaker">Dmitry Ner</span>Взял конверт.
+        </div>
+      </div>
+    </div>
+    <div class="photo-item" data-photo="28">
+      <div class="photo-frame" onclick="openLightbox('img/28.jpg', 'Purosangue наблюдает через окно')">
+        <img src="img/28.jpg" alt="Purosangue у окна конференц-зала">
+        <div class="hotspot" style="top: 50%; left: 30%;">5<div class="hotspot-tooltip">Purosangue Sao фиксирует всё на камеру</div></div>
+      </div>
+      <div class="photo-caption">
+        <div class="photo-meta"><span>Кадр 28 · Наблюдение</span><span>Коридор · Ночь</span></div>
+        <div class="photo-text">Purosangue Sao наблюдает через окно конференц-зала. Всё зафиксировано.</div>
+      </div>
+    </div>
+  </div>
+  <div class="dialogue">
+    <div class="dialogue-row" data-delay="0"><div class="dialogue-speaker">Dmitry Ner</div><div class="dialogue-text">«Отлично... это новый шаг к революции...»</div></div>
+    <div class="dialogue-row" data-delay="200"><div class="dialogue-speaker">Maxence Lacroix</div><div class="dialogue-text">«Вот твои деньги за прошлое. Поверь, он будет молчать.»</div></div>
+    <div class="dialogue-row" data-delay="400"><div class="dialogue-speaker">Maxence Lacroix</div><div class="dialogue-text">*кладёт на стол конверт с 35 000$*</div></div>
+    <div class="dialogue-row" data-delay="600"><div class="dialogue-speaker">Dmitry Ner</div><div class="dialogue-text">*берёт конверт*</div></div>
+  </div>
+  <div class="pullquote reveal">
+    <div class="pullquote-text">«Отлично... это новый шаг к революции...»</div>
+    <div class="pullquote-author">— Dmitry Ner · Конференц-зал · Ночь</div>
+  </div>
+
+  <div class="question-note reveal">
+    <div class="question-note-label">Вопрос расследования</div>
+    <div class="question-note-text">Почему Дмитрий хочет свергнуть Фридриха?</div>
+    <div class="question-note-hint">Получая деньги от Maxence Lacroix за «революцию», Дмитрий явно имеет личный интерес в смене руководства. Но какой именно? Власть, деньги, или что-то большее?</div>
+  </div>
+
+  <div class="evidence-map reveal">
+    <div class="map-title">Карта связей · Сцена 10</div>
+    <div class="map-nodes">
+      <div class="map-node"><div class="map-node-circle">01</div><div class="map-node-label">Архив</div></div>
+      <div class="map-node"><div class="map-node-circle">02</div><div class="map-node-label">Шаги</div></div>
+      <div class="map-node"><div class="map-node-circle">03</div><div class="map-node-label">Конференц-зал</div></div>
+      <div class="map-node"><div class="map-node-circle">04</div><div class="map-node-label">Правда</div></div>
+    </div>
+  </div>
+  <div class="scene-nav">
+    <button class="nav-button" onclick="document.getElementById('scene09').scrollIntoView({behavior: 'smooth'})">← Предыдущая</button>
+    <button class="nav-button" onclick="document.getElementById('scene11').scrollIntoView({behavior: 'smooth'})">Следующая сцена →</button>
+  </div>
+</section>
+
+<div class="animated-divider"></div>
+
+<section class="section" id="scene11">
+  <div class="section-label">Сцена 11 · Кабинет Chief · Утро</div>
+  <div class="section-header">
+    <div class="section-num">11</div>
+    <h2 class="section-title">Доклад <em>полковнику Акане</em></h2>
+  </div>
+  <div class="narrative">
+    <p>Утро. Я иду в кабинет Chief. На столе — папка со всеми доказательствами: фото с КПП, записи разговоров, протокол из архива, фото передачи денег в конференц-зале. Всё, что нужно для ареста.</p>
+    <p>Felix Akana сидит за столом. Он смотрит на меня с подозрением — я всего лишь кадет, а он полковник. Но то, что я показываю, заставляет его замолчать.</p>
+    <p>Сначала он не верит. Потом видит фото. Потом — протокол с именем Дмитрия. Его лицо меняется.</p>
+    <p>— Я займусь этим лично, — говорит он. И я знаю: он не шутит.</p>
+  </div>
+  <div class="photo-grid">
+    <div class="photo-item" data-photo="30">
+      <div class="photo-frame" onclick="openLightbox('img/30.jpg', 'Финальный разговор с полковником')">
+        <img src="img/30.jpg" alt="Felix Akana и Purosangue">
+        <div class="hotspot" style="top: 40%; left: 35%;">1<div class="hotspot-tooltip">Felix Akana не верит сначала</div></div>
+        <div class="hotspot" style="top: 40%; right: 30%;">2<div class="hotspot-tooltip">Purosangue настаивает на правде</div></div>
+      </div>
+      <div class="photo-caption">
+        <div class="photo-meta"><span>Кадр 29 · Недоверие</span><span>Кабинет Chief · Утро</span></div>
+        <div class="photo-text">
+          <span class="speaker">Felix Akana</span>«Кадет, что вы бредите? Не нервнируйте меня!»<br><br>
+          <span class="speaker">Purosangue Sao</span>«Товарищ Полковник, Дмитрий делает замысел против Шерифа!»
+        </div>
+      </div>
+    </div>
+    <div class="photo-item" data-photo="29">
+      <div class="photo-frame" onclick="openLightbox('img/29.jpg', 'Purosangue показывает доказательства полковнику Акане')">
+        <img src="img/29.jpg" alt="Purosangue и Felix Akana">
+        <div class="hotspot" style="top: 40%; left: 35%;">3<div class="hotspot-tooltip">Felix Akana — полковник полицейского департамента</div></div>
+        <div class="hotspot" style="top: 40%; right: 30%;">4<div class="hotspot-tooltip">Purosangue Sao показывает доказательства</div></div>
+      </div>
+      <div class="photo-caption">
+        <div class="photo-meta"><span>Кадр 30 · Доказательства</span><span>Кабинет Chief · Утро</span></div>
+        <div class="photo-text">
+          <span class="speaker">Purosangue Sao</span>«Вот смотрите!» сказал Purosangue Sao, показываю все собранные доказательства.<br><br>
+          <span class="speaker">Felix Akana</span>«Что это? Не может быть... Я займусь этим лично.»
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="dialogue">
+    <div class="dialogue-row" data-delay="0"><div class="dialogue-speaker">Felix Akana</div><div class="dialogue-text">«Кадет, что вы бредите? Не нервнируйте меня!»</div></div>
+    <div class="dialogue-row" data-delay="200"><div class="dialogue-speaker">Purosangue Sao</div><div class="dialogue-text">«Товарищ Полковник, Дмитрий делает замысел против Шерифа!»</div></div>
+    <div class="dialogue-row" data-delay="400"><div class="dialogue-speaker">Purosangue Sao</div><div class="dialogue-text">«Вот смотрите!» *показывает все собранные доказательства*</div></div>
+    <div class="dialogue-row" data-delay="600"><div class="dialogue-speaker">Felix Akana</div><div class="dialogue-text">«Что это? Не может быть... Я займусь этим лично.»</div></div>
+  </div>
+  <div class="pullquote reveal">
+    <div class="pullquote-text">«Что это? Не может быть... Я займусь этим лично.»</div>
+    <div class="pullquote-author">— Felix Akana · Полковник полицейского департамента · Утро</div>
+  </div>
+  <div class="evidence-map reveal">
+    <div class="map-title">Карта связей · Сцена 11</div>
+    <div class="map-nodes">
+      <div class="map-node"><div class="map-node-circle">01</div><div class="map-node-label">Кабинет Chief</div></div>
+      <div class="map-node"><div class="map-node-circle">02</div><div class="map-node-label">Недоверие</div></div>
+      <div class="map-node"><div class="map-node-circle">03</div><div class="map-node-label">Доказательства</div></div>
+      <div class="map-node"><div class="map-node-circle">04</div><div class="map-node-label">Решение</div></div>
+    </div>
+  </div>
+  <div class="scene-nav">
+    <button class="nav-button" onclick="document.getElementById('scene10').scrollIntoView({behavior: 'smooth'})">← Предыдущая</button>
+    <button class="nav-button" onclick="document.getElementById('scene12').scrollIntoView({behavior: 'smooth'})">Следующая сцена →</button>
+  </div>
+</section>
+
+<div class="animated-divider"></div>
+
+<section class="section" id="scene12">
+  <div class="section-label">Сцена 12 · Редакция San-Fierro News · Вечер</div>
+  <div class="section-header">
+    <div class="section-num">12</div>
+    <h2 class="section-title">Письмо <em>от Дмитрия</em></h2>
+  </div>
+  <div class="narrative">
+    <p>Вечер. Я возвращаюсь в редакцию после доклада полковнику. На столе — конверт. Без марки. Без обратного адреса. Только моё имя, написанное от руки.</p>
+    <p>Внутри — лист бумаги. Почерк знакомый. Дмитрий.</p>
+    <p>Он пишет, что знает всё. Что я нашёл протокол, что видел его с Maxence в конференц-зале. Что он ждёт меня. Глубокой ночью. На горе. Возле заброшенного сарая.</p>
+    <p>Я смотрю на письмо долго. Потом достаю камеру. Проверяю батарею. И знаю: я пойду. Но не один. Полковник Акана будет ждать в отдалении.</p>
+  </div>
+
+  <div class="email-block reveal">
+    <div class="email-header-bar">
+      <div class="email-icon">✉</div>
+      <div class="email-subject">Встреча. Сегодня. Ночь.</div>
+    </div>
+    <div class="email-meta">
+      <div class="email-meta-row">
+        <div class="email-meta-label">От</div>
+        <div class="email-meta-value"><span class="sender-name">Dmitry Ner</span> <span class="sender-email">&lt;d.ner@email.com&gt;</span></div>
+      </div>
+      <div class="email-meta-row">
+        <div class="email-meta-label">Кому</div>
+        <div class="email-meta-value"><span class="sender-name">Purosangue Sao</span> <span class="sender-email">&lt;p.sao@san-fierro-news.com&gt;</span></div>
+      </div>
+      <div class="email-meta-row">
+        <div class="email-meta-label">Дата</div>
+        <div class="email-meta-value">16 октября 2026, 19:47</div>
+      </div>
+      <div class="email-meta-row">
+        <div class="email-meta-label">Приоритет</div>
+        <div class="email-meta-value" style="color: var(--red); font-weight: 700;">● ВЫСОКИЙ</div>
+      </div>
+    </div>
+    <div class="email-body">
+      <div class="greeting">Purosangue,</div>
+      <p>Ты получил моё письмо. Я знал, что ты придёшь.</p>
+      <p>Ты нашёл протокол. Ты видел меня с Maxence в конференц-зале. Ты всё знаешь. Но ты не знаешь главного — почему я это сделал.</p>
+      <p>Приходи сегодня. Глубокой ночью. На горе. Возле заброшенного сарая. Ты знаешь, где это.</p>
+      <p>Приходи один. Без камеры. Без диктофона. <strong>Поговорим начистоту.</strong></p>
+      <p>Я объясню всё. И ты поймёшь, что я был не врагом. Я был единственным, кто мог это остановить.</p>
+      <p>Жду.</p>
+      <div class="signature">
+        <strong>Dmitry Ner</strong>
+        Серверная, 2-й этаж · Полицейский департамент Сан-Фиерро
+      </div>
+    </div>
+    <div class="email-footer">
+      <span>Шифрование: AES-256 · Статус: <span class="priority">ПРОЧИТАНО</span></span>
+      <span>San-Fierro News · Внутренняя почта</span>
+    </div>
+  </div>
+
+  <div class="pullquote reveal">
+    <div class="pullquote-text">«Поговорим начистоту.»</div>
+    <div class="pullquote-author">— Из письма Dmitry Ner · 16.10.2026</div>
+  </div>
+
+  <div class="evidence-map reveal">
+    <div class="map-title">Карта связей · Сцена 12</div>
+    <div class="map-nodes">
+      <div class="map-node"><div class="map-node-circle">01</div><div class="map-node-label">Конверт</div></div>
+      <div class="map-node"><div class="map-node-circle">02</div><div class="map-node-label">Письмо</div></div>
+      <div class="map-node"><div class="map-node-circle">03</div><div class="map-node-label">Гора</div></div>
+      <div class="map-node"><div class="map-node-circle">04</div><div class="map-node-label">Сарай</div></div>
+    </div>
+  </div>
+
+  <div class="scene-nav">
+    <button class="nav-button" onclick="document.getElementById('scene11').scrollIntoView({behavior: 'smooth'})">← Предыдущая</button>
+    <button class="nav-button" onclick="document.getElementById('scene13').scrollIntoView({behavior: 'smooth'})">Следующая сцена →</button>
+  </div>
+</section>
+
+<div class="animated-divider"></div>
+
+<section class="section" id="scene13">
+  <div class="section-label">Сцена 13 · Гора · Заброшенный сарай · Ночь</div>
+  <div class="section-header">
+    <div class="section-num">13</div>
+    <h2 class="section-title">Последний разговор <em>в дождь</em></h2>
+  </div>
+  <div class="narrative">
+    <p>Ночь. Дождь барабанит по ржавой крыше сарая, а гора тонет в густом тумане. Я подхожу один, но знаю: в ста метрах отсюда, за деревьями, уже ждёт полковник Акана с группой захвата.</p>
+    <p>Дмитрий стоит у двери, руки в карманах. Маска скрыта капюшоном, но его уверенная поза выдает хозяина положения. Он говорит о том, как использовал меня как инструмент против конкурентов, и делает это с холодной гордостью.</p>
+    <p>Я слушаю, не перебивая, давая ему выговориться. А затем делаю свой ход. Я произношу правду, которую он не ожидал услышать. Он замирает. И впервые в его глазах я вижу не расчёт, а полное поражение.</p>
+  </div>
+  <div class="photo-grid">
+    <div class="photo-item" data-photo="31">
+      <div class="photo-frame" onclick="openLightbox('img/31.jpg', 'Встреча у сарая · Дождь')">
+        <img src="img/31.jpg" alt="Purosangue и Dmitry у сарая">
+        <div class="hotspot" style="top: 40%; left: 30%;">1<div class="hotspot-tooltip">Dmitry Ner ждёт у сарая</div></div>
+        <div class="hotspot" style="top: 40%; right: 30%;">2<div class="hotspot-tooltip">Purosangue Sao прибывает на встречу</div></div>
+      </div>
+      <div class="photo-caption">
+        <div class="photo-meta"><span>Кадр 31 · Встреча</span><span>Гора · Заброшенный сарай · Ночь</span></div>
+        <div class="photo-text">
+          <span class="speaker">Dmitry Ner</span>«Ты получил моё письмо. Я знал, что ты придёшь.»<br><br>
+          <span class="speaker">Purosangue Sao</span>«Что тебе нужно, Дмитрий? Говори прямо сейчас!»
+        </div>
+      </div>
+    </div>
+    <div class="photo-item" data-photo="32">
+      <div class="photo-frame" onclick="openLightbox('img/32.jpg', 'Финальный разговор · Признание')">
+        <img src="img/32.jpg" alt="Финальный разговор">
+        <div class="hotspot" style="top: 40%; left: 30%;">3<div class="hotspot-tooltip">Dmitry Ner признаётся в использовании Purosangue</div></div>
+        <div class="hotspot" style="top: 40%; right: 30%;">4<div class="hotspot-tooltip">Purosangue Sao сообщает о передаче дела полковнику</div></div>
+      </div>
+      <div class="photo-caption">
+        <div class="photo-meta"><span>Кадр 32 · Финал</span><span>Гора · Заброшенный сарай · Ночь</span></div>
+        <div class="photo-text">
+          <span class="speaker">Dmitry Ner</span>«Maxence был слишком глуп, Isee — слишком заметен. А ты... был идеальным оружием.»<br><br>
+          <span class="speaker">Purosangue Sao</span>«Я всё передал полковнику, Дмитрий. Расследование закрыто. Твой культ будет вычеркнут. Из списка. Из департамента. Из истории.»
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="dialogue">
+    <div class="dialogue-row" data-delay="0"><div class="dialogue-speaker">Dmitry Ner</div><div class="dialogue-text">«Ты получил моё письмо. Я знал, что ты придёшь.»</div></div>
+    <div class="dialogue-row" data-delay="200"><div class="dialogue-speaker">Purosangue Sao</div><div class="dialogue-text">«Что тебе нужно, Дмитрий? Говори прямо сейчас!»</div></div>
+    <div class="dialogue-row" data-delay="400"><div class="dialogue-speaker">Dmitry Ner</div><div class="dialogue-text">«Maxence был слишком глуп, Isee — слишком заметен. А ты... был идеальным оружием.»</div></div>
+    <div class="dialogue-row" data-delay="600"><div class="dialogue-speaker">Purosangue Sao</div><div class="dialogue-text">«Я всё передал полковнику, Дмитрий. Расследование закрыто. Твой культ будет вычеркнут. Из списка. Из департамента. Из истории.»</div></div>
+  </div>
+  <div class="pullquote reveal">
+    <div class="pullquote-text">«Твой культ будет вычеркнут. Из списка. Из департамента. Из истории.»</div>
+    <div class="pullquote-author">— Purosangue Sao · Гора · Ночь</div>
+  </div>
+  <div class="evidence-map reveal">
+    <div class="map-title">Карта связей · Сцена 13</div>
+    <div class="map-nodes">
+      <div class="map-node"><div class="map-node-circle">01</div><div class="map-node-label">Письмо</div></div>
+      <div class="map-node"><div class="map-node-circle">02</div><div class="map-node-label">Гора</div></div>
+      <div class="map-node"><div class="map-node-circle">03</div><div class="map-node-label">Признание</div></div>
+      <div class="map-node"><div class="map-node-circle">04</div><div class="map-node-label">Арест</div></div>
+    </div>
+  </div>
+  <div class="scene-nav">
+    <button class="nav-button" onclick="document.getElementById('scene12').scrollIntoView({behavior: 'smooth'})">← Предыдущая</button>
+    <button class="nav-button" onclick="document.getElementById('scene14').scrollIntoView({behavior: 'smooth'})">Следующая сцена →</button>
+  </div>
+</section>
+
+<div class="animated-divider"></div>
+
+<section class="section" id="scene14">
+  <div class="section-label">Сцена 14 · Офис редакции San-Fierro News · Финал</div>
+  <div class="section-header">
+    <div class="section-num">14</div>
+    <h2 class="section-title">Дело закрыто · <em>Последний отчёт</em></h2>
+  </div>
+  <div class="narrative">
+    <p>Три недели. Столько длилось это расследование — от первого звонка Jonny Wilde до последнего ареста. Бессонные ночи, фальшивые улыбки в коридорах полицейского департамента и скрытые записи, которые могли стоить мне жизни.</p>
+    <p>Сегодня я возвращаюсь туда, где всё началось. В кабинет генерального директора лежат золотые диски на стене и красный маркер на столе. Но теперь там лежит и толстая папка с надписью «ДЕЛО №0471».</p>
+    <p>Я кладу её перед Jonny Wilde без слов. Он открывает, листает и долго молчит. Поднимая глаза, я вижу в них то, чего не замечал раньше: искреннее уважение.</p>
+    <p>«Ты постарался на славу, Пьюросанджи. Ты молодец». Две фразы, за которыми стоит признание и гордость редактора за проделанную работу.</p>
+    <p>Я выхожу из кабинета. В коридоре тихо, но я точно знаю: в камерах содержания уже сидят трое заговорщиков. А Шериф Фридрих всё ещё на своём посту. Игра стоила свеч.</p>
+  </div>
+
+  <div class="photo-grid">
+    <div class="photo-item" data-photo="33">
+      <div class="photo-frame" onclick="openLightbox('img/33.jpg', 'Передача финального отчёта директору')">
+        <img src="img/33.jpg" alt="Purosangue и Jonny Wilde · Финал">
+        <div class="hotspot" style="top: 40%; left: 35%;">1<div class="hotspot-tooltip">Purosangue Sao кладёт дело на стол</div></div>
+        <div class="hotspot" style="top: 40%; right: 30%;">2<div class="hotspot-tooltip">Jonny Wilde берёт отчёт в руки</div></div>
+      </div>
+      <div class="photo-caption">
+        <div class="photo-meta"><span>Кадр 33 · Отчёт</span><span>Кабинет директора · San-Fierro News</span></div>
+        <div class="photo-text">
+          <span class="speaker">Purosangue Sao</span>«Это конечный отчёт расследования» — сказал Purosangue Sao, положив дело на стол.<br><br>
+          <span class="speaker">Jonny Wilde</span>«Сейчас посмотрим» — сказал Jonny Wilde, взял отчёт в руки.
+        </div>
+      </div>
+    </div>
+    <div class="photo-item" data-photo="34">
+      <div class="photo-frame" onclick="openLightbox('img/34.jpg', 'Признание заслуг · Финал расследования')">
+        <img src="img/34.jpg" alt="Jonny Wilde хвалит Purosangue">
+        <div class="hotspot" style="top: 40%; left: 35%;">3<div class="hotspot-tooltip">Purosangue Sao — расследование завершено</div></div>
+        <div class="hotspot" style="top: 40%; right: 30%;">4<div class="hotspot-tooltip">Jonny Wilde признаёт заслуги журналиста</div></div>
+      </div>
+      <div class="photo-caption">
+        <div class="photo-meta"><span>Кадр 34 · Признание</span><span>Кабинет директора · San-Fierro News</span></div>
+        <div class="photo-text">
+          <span class="speaker">Purosangue Sao</span>«Игра стоила свеч! Расследование закончилось успешно.»<br><br>
+          <span class="speaker">Jonny Wilde</span>«Ты постарался на славу Пьюросанджи, ты молодец!»
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="dialogue">
+    <div class="dialogue-row" data-delay="0"><div class="dialogue-speaker">Purosangue Sao</div><div class="dialogue-text">«Это конечный отчёт расследования.» *кладёт дело на стол*</div></div>
+    <div class="dialogue-row" data-delay="200"><div class="dialogue-speaker">Jonny Wilde</div><div class="dialogue-text">«Сейчас посмотрим.» *берёт отчёт в руки*</div></div>
+    <div class="dialogue-row" data-delay="600"><div class="dialogue-speaker">Purosangue Sao</div><div class="dialogue-text">«Игра стоила свеч! Расследование закончилось успешно.»</div></div>
+    <div class="dialogue-row" data-delay="800"><div class="dialogue-speaker">Jonny Wilde</div><div class="dialogue-text">«Ты постарался на славу, Пьюросанджи. Ты молодец!»</div></div>
+  </div>
+
+  <div class="pullquote reveal">
+    <div class="pullquote-text">«Ты постарался на славу, Пьюросанджи. Ты молодец!»</div>
+    <div class="pullquote-author">— Jonny Wilde · Генеральный директор San-Fierro News · Финал расследования</div>
+  </div>
+
+  <!-- ОТЧЁТ ПО РАССЛЕДОВАНИЮ -->
+  <div class="report-block reveal">
+    <div class="report-header">
+      <div class="report-field">
+        <div class="report-label">Номер дела</div>
+        <div class="report-value">№0471 / San-Fierro News</div>
+      </div>
+      <div class="report-field">
+        <div class="report-label">Дата закрытия</div>
+        <div class="report-value">16 октября 2026</div>
+      </div>
+      <div class="report-field">
+        <div class="report-label">Ведущий корреспондент</div>
+        <div class="report-value">Purosangue Sao</div>
+      </div>
+      <div class="report-field">
+        <div class="report-label">Статус</div>
+        <div class="report-value" style="color: var(--accent);">● ЗАКРЫТО</div>
+      </div>
+    </div>
+
+    <div class="report-section">
+      <div class="report-section-title">Краткое содержание</div>
+      <div class="report-text">
+        <p>В ходе расследования, инициированного генеральным директором San-Fierro News Jonny Wilde, специальный корреспондент Purosangue Sao провёл операцию под прикрытием в полицейском департаменте Сан-Фиерро.</p>
+        <p>Расследование выявило коррупционную сеть во главе с лейтенантом Maxence Lacroix, занимавшимся вербовкой армейских бойцов из армии Лас-Вентураса за денежное вознаграждение в размере 4.5 миллиона долларов за каждого завербованного.</p>
+        <p>В ходе расследования был разоблачён заговор с целью свержения Шерифа Фридриха, включавший фальсификацию документов полицейского департамента, продажу правосудия и систематическое получение взяток.</p>
+      </div>
+    </div>
+
+    <div class="report-section">
+      <div class="report-section-title">Ключевые результаты</div>
+      <div class="report-text">
+        <p><strong>1.</strong> Зафиксирована вербовка армейца Tommy Freeze лейтенантом Maxence Lacroix на КПП военного округа.</p>
+        <p><strong>2.</strong> Обнаружены систематические фальсификации документов в архиве полицейского департамента.</p>
+        <p><strong>3.</strong> Зафиксирована передача взятки в размере 70 000$ от Isee Gvozdoder лейтенанту Lacroix за закрытие дела.</p>
+        <p><strong>4.</strong> Обнаружен секретный протокол со списком сторонников смены Шерифа Фридриха.</p>
+        <p><strong>5.</strong> Выявлена роль Dmitry Ner как соучастника заговора, использовавшего журналиста San-Fierro News в качестве инструмента для устранения конкурентов.</p>
+        <p><strong>6.</strong> Получено личное признание Dmitry Ner в финальной встрече у заброшенного сарая.</p>
+      </div>
+    </div>
+
+    <div class="report-section">
+      <div class="report-section-title">Итоговые решения</div>
+      <div class="report-text">
+        <p>Все материалы расследования переданы полковнику Felix Akana. Трое фигурантов задержаны: Maxence Lacroix, Dmitry Ner, Isee Gvozdoder.</p>
+        <p>Группа заговорщиков, планировавшая свержение Шерифа Фридриха, полностью разоблачена и будет уволена из списков полицейского департамента.</p>
+        <p><strong>Расследование прошло успешно.</strong> Шериф Фридрих остался на своём посту. Коррупционная схема ликвидирована.</p>
+      </div>
+    </div>
+
+    <div class="report-signature">
+      <div class="signature-block">
+        <div class="signature-name">Purosangue Sao</div>
+        <div class="signature-role">Специальный корреспондент · San-Fierro News</div>
+      </div>
+      <div class="signature-block">
+        <div class="signature-name">Jonny Wilde</div>
+        <div class="signature-role">Генеральный директор · San-Fierro News</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ЗАЦЕПКИ -->
+  <div style="margin: 4rem 0;">
+    <div class="section-label" style="margin-bottom: 2rem;">Зацепки расследования</div>
+    <div class="clue-block">
+      <div class="clue-item" onclick="this.classList.toggle('open')">
+        <div class="clue-header">
+          <div class="clue-number">ЗАЦЕПКА №01</div>
+          <div class="clue-scene">Сцена 03</div>
+        </div>
+        <div class="clue-title">Первичный источник · Dmitry Ner</div>
+        <div class="clue-desc">Первый контакт в коридоре полицейского департамента. Предоставил наводку на КПП военного округа.</div>
+        <div class="clue-toggle">[ Нажми, чтобы раскрыть ]</div>
+        <div class="clue-content">
+          <p>Dmitry Ner вышел на контакт с журналистом Purosangue Sao сразу после собеседования в полицейском департаменте. Представился как осведомлённый сотрудник, знающий о нелегальной деятельности лейтенанта Maxence Lacroix.</p>
+          <p>Первая зацепка: лейтенант вербует армейцев из армии Лас-Вентураса за деньги в одно и то же время каждую неделю.</p>
+          <p><strong>Статус:</strong> Арестован. Соучастник заговора.</p>
+        </div>
+      </div>
+      <div class="clue-item" onclick="this.classList.toggle('open')">
+        <div class="clue-header">
+          <div class="clue-number">ЗАЦЕПКА №02</div>
+          <div class="clue-scene">Сцена 04</div>
+        </div>
+        <div class="clue-title">КПП военного округа · Вербовка</div>
+        <div class="clue-desc">Фиксация вербовки армейца Tommy Freeze лейтенантом Lacroix.</div>
+        <div class="clue-toggle">[ Нажми, чтобы раскрыть ]</div>
+        <div class="clue-content">
+          <p>В ночь на 16.10.2026 журналист Purosangue Sao провёл скрытое наблюдение у КПП военного округа на границе с Лас-Вентурасом, спрятавшись с камерой за своей машиной.</p>
+          <p>Зафиксирована встреча лейтенанта Maxence Lacroix с армейским бойцом Tommy Freeze. Предмет встречи: вербовка за денежное вознаграждение в размере 4.5 миллиона долларов каждому.</p>
+          <p><strong>Доказательства:</strong> Аудиозапись разговора, фотофиксация встречи.</p>
+        </div>
+      </div>
+      <div class="clue-item" onclick="this.classList.toggle('open')">
+        <div class="clue-header">
+          <div class="clue-number">ЗАЦЕПКА №03</div>
+          <div class="clue-scene">Сцена 06</div>
+        </div>
+        <div class="clue-title">Архив полицейского департамента · Фальсификации</div>
+        <div class="clue-desc">Ночной визит в архив. Обнаружены систематические фальсификации документов.</div>
+        <div class="clue-toggle">[ Нажми, чтобы раскрыть ]</div>
+        <div class="clue-content">
+          <p>В ходе ночного визита в архив полицейского департамента журналистом обнаружены:</p>
+          <p>— Поддельные подписи в протоколах<br>— Изменённые даты в актах<br>— Дела, закрытые без оснований<br>— Секретный протокол о смене руководства (список сторонников свержения Шерифа Фридриха)</p>
+          <p><strong>Ключевая находка:</strong> Имя Dmitry Ner в списке сторонников заговора.</p>
+        </div>
+      </div>
+      <div class="clue-item" onclick="this.classList.toggle('open')">
+        <div class="clue-header">
+          <div class="clue-number">ЗАЦЕПКА №04</div>
+          <div class="clue-scene">Сцена 07</div>
+        </div>
+        <div class="clue-title">Кабинет Deputy Chief · Взятка</div>
+        <div class="clue-desc">Фиксация передачи взятки в размере 70 000$ от Isee Gvozdoder лейтенанту Lacroix.</div>
+        <div class="clue-toggle">[ Нажми, чтобы раскрыть ]</div>
+        <div class="clue-content">
+          <p>В ходе ночного наблюдения в кабинете Deputy Chief зафиксирована передача взятки.</p>
+          <p>Лейтенант Maxence Lacroix получил от гражданского лица Isee Gvozdoder сумму в размере 70 000$ за закрытие дела. Передача произошла без пересчёта, что указывает на отработанность схемы.</p>
+          <p><strong>Доказательства:</strong> Фотофиксация передачи, аудиозапись разговора.</p>
+        </div>
+      </div>
+      <div class="clue-item" onclick="this.classList.toggle('open')">
+        <div class="clue-header">
+          <div class="clue-number">ЗАЦЕПКА №05</div>
+          <div class="clue-scene">Сцена 10</div>
+        </div>
+        <div class="clue-title">Конференц-зал · Финальное наблюдение</div>
+        <div class="clue-desc">Dmitry Ner и Maxence Lacroix — заговорщики. Передача 35 000$.</div>
+        <div class="clue-toggle">[ Нажми, чтобы раскрыть ]</div>
+        <div class="clue-content">
+          <p>В ходе финального наблюдения в конференц-зале полицейского департамента зафиксирована совместная встреча Dmitry Ner и Maxence Lacroix.</p>
+          <p>Обсуждались планы «революции» — смены руководства полицейского департамента. Lacroix передал Ner конверт с 35 000$ «за прошлое».</p>
+          <p><strong>Вывод:</strong> Dmitry Ner не был осведомителем. Он был соучастником заговора, использовавшим журналиста San-Fierro News для устранения конкурентов.</p>
+        </div>
+      </div>
+      <div class="clue-item" onclick="this.classList.toggle('open')">
+        <div class="clue-header">
+          <div class="clue-number">ЗАЦЕПКА №06</div>
+          <div class="clue-scene">Сцена 13</div>
+        </div>
+        <div class="clue-title">Гора · Заброшенный сарай · Финальное признание</div>
+        <div class="clue-desc">Последняя встреча с Dmitry Ner. Полное признание вины.</div>
+        <div class="clue-toggle">[ Нажми, чтобы раскрыть ]</div>
+        <div class="clue-content">
+          <p>По приглашению Dmitry Ner журналист прибыл на встречу у заброшенного сарая на горе. Встреча проходила в ночное время, в условиях дождя.</p>
+          <p>Dmitry Ner полностью признал свою роль в заговоре: использование журналиста как инструмента для устранения конкурентов (Maxence Lacroix, Isee Gvozdoder), планирование смены руководства полицейского департамента.</p>
+          <p>Ключевая цитата: «Maxence был слишком глуп, Isee — слишком заметен. А ты... был идеальным оружием.»</p>
+          <p><strong>Результат:</strong> Purosangue Sao сообщил о передаче дела полковнику. Культ будет уволен. Расследование закрыто.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ВЕРДИКТ ПО ДЕЛУ -->
+  <div class="verdict-section reveal">
+    <div class="verdict-title">Вердикт по делу №0471</div>
+    <div class="verdict-list">
+      <div class="verdict-item">
+        <div class="verdict-name">Maxence Lacroix</div>
+        <div class="verdict-desc">Лейтенант полицейского департамента. Вербовка армейцев, фальсификация документов, получение взяток. Организовал схему продажи правосудия.</div>
+        <div class="verdict-status arrested">Арестован</div>
+      </div>
+      <div class="verdict-item">
+        <div class="verdict-name">Dmitry Ner</div>
+        <div class="verdict-desc">Соучастник заговора. Архитектор схемы смены руководства. Использовал журналиста San-Fierro News как инструмент для устранения конкурентов.</div>
+        <div class="verdict-status arrested">Арестован</div>
+      </div>
+      <div class="verdict-item">
+        <div class="verdict-name">Isee Gvozdoder</div>
+        <div class="verdict-desc">Взяткодатель. Передал 70 000$ лейтенанту Lacroix за закрытие дела. Клиент коррупционной схемы.</div>
+        <div class="verdict-status arrested">Арестован</div>
+      </div>
+      <div class="verdict-item">
+        <div class="verdict-name">Шериф Фридрих</div>
+        <div class="verdict-desc">Цель заговора. Попытка свержения предотвращена благодаря расследованию San-Fierro News. Остался на посту.</div>
+        <div class="verdict-status cleared">На посту</div>
+      </div>
+    </div>
+    <div class="final-verdict-statement">
+      Расследование прошло успешно.
+    </div>
+  </div>
+
+  <div class="scene-nav">
+    <button class="nav-button" onclick="document.getElementById('scene13').scrollIntoView({behavior: 'smooth'})">← Предыдущая</button>
+    <button class="nav-button" disabled>Расследование закрыто ✓</button>
+  </div>
+</section>
+
+<footer class="footer">
+  <div class="footer-logo">SAN-FIERRO <span>NEWS</span></div>
+  <p class="footer-text">Расследование закрыто. Все фигуранты задержаны. Dmitry Ner, Maxence Lacroix, Isee Gvozdoder — переданы полковнику Felix Akana. Шериф Фридрих остался на посту. Purosangue Sao выполнил задание.</p>
+</footer>
+
+<div class="lightbox" id="lightbox" onclick="closeLightbox()">
+  <div class="lightbox-content" onclick="event.stopPropagation()">
+    <button class="lightbox-close" onclick="closeLightbox()">✕</button>
+    <img id="lightbox-img" src="" alt="">
+    <div class="lightbox-caption" id="lightbox-caption"></div>
+  </div>
+</div>
+
+<script>
+  window.addEventListener('scroll', () => {
+    const winScroll = document.body.scrollTop || document.documentElement.scrollTop;
+    const height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+    const scrolled = (winScroll / height) * 100;
+    document.getElementById('readingProgress').style.width = scrolled + '%';
+  });
+
+  const sections = ['scene01', 'scene02', 'scene03', 'scene04', 'scene05', 'scene06', 'scene07', 'scene08', 'scene09', 'scene10', 'scene11', 'scene12', 'scene13', 'scene14'];
+  const dots = document.querySelectorAll('.timeline-dot');
+
+  window.addEventListener('scroll', () => {
+    let current = 0;
+    sections.forEach((id, index) => {
+      const section = document.getElementById(id);
+      if (section) {
+        const rect = section.getBoundingClientRect();
+        if (rect.top <= window.innerHeight / 2) {
+          current = index + 1;
+        }
+      }
+    });
+
+    dots.forEach((dot, index) => {
+      if (index === 0 && current === 0) {
+        dot.classList.add('active');
+      } else if (index === current) {
+        dot.classList.add('active');
+      } else {
+        dot.classList.remove('active');
+      }
+    });
+  });
+
+  const observerOptions = { threshold: 0.15, rootMargin: '0px 0px -50px 0px' };
+
+  const revealObserver = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        entry.target.classList.add('visible');
+        revealObserver.unobserve(entry.target);
+      }
+    });
+  }, observerOptions);
+
+  document.querySelectorAll('.reveal').forEach(el => revealObserver.observe(el));
+
+  const photoObserver = new IntersectionObserver((entries) => {
+    entries.forEach((entry, index) => {
+      if (entry.isIntersecting) {
+        setTimeout(() => {
+          entry.target.classList.add('visible');
+        }, index * 150);
+        photoObserver.unobserve(entry.target);
+      }
+    });
+  }, { threshold: 0.2 });
+
+  document.querySelectorAll('.photo-item').forEach(p => photoObserver.observe(p));
+
+  const dialogueObserver = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        const rows = entry.target.querySelectorAll('.dialogue-row');
+        rows.forEach((row) => {
+          const delay = parseInt(row.dataset.delay) || 0;
+          setTimeout(() => {
+            row.classList.add('visible');
+          }, delay);
+        });
+        dialogueObserver.unobserve(entry.target);
+      }
+    });
+  }, { threshold: 0.2 });
+
+  document.querySelectorAll('.dialogue').forEach(d => dialogueObserver.observe(d));
+
+  let lastScroll = 0;
+  const topbar = document.querySelector('.topbar');
+
+  window.addEventListener('scroll', () => {
+    const currentScroll = window.pageYOffset;
+    if (currentScroll > 100) {
+      topbar.style.padding = '0.8rem 3rem';
+    } else {
+      topbar.style.padding = '1.2rem 3rem';
+    }
+    lastScroll = currentScroll;
+  });
+
+  function openLightbox(src, caption) {
+    const lightbox = document.getElementById('lightbox');
+    const img = document.getElementById('lightbox-img');
+    const cap = document.getElementById('lightbox-caption');
+    
+    img.src = src;
+    cap.textContent = caption;
+    lightbox.classList.add('active');
+    document.body.style.overflow = 'hidden';
+  }
+
+  function closeLightbox() {
+    const lightbox = document.getElementById('lightbox');
+    lightbox.classList.remove('active');
+    document.body.style.overflow = '';
+  }
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') closeLightbox();
+  });
+</script>
+
+</body>
+</html>
